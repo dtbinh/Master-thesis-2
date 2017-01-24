@@ -1,0 +1,115 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+\title{LMPC theory}
+\author{}
+\date{October 2016}
+
+\begin{document}
+
+%\maketitle
+
+\section{Definitions}
+\subsection{Problem definition}
+Solve following problem:
+\begin{align}
+J_{0\rightarrow\infty}^*(x_S)&=\min_{\mathbf{u}}\sum_{k=0}^\infty h(x_k,u_k)\\
+\text{s.t. } x_{k+1}&=f(x_k,u_k)\\
+x_0&=x_S\\
+x_k&\in\mathcal{X},u_k\in\mathcal{U},\forall k\geq 0
+\end{align}
+with 
+\begin{align}
+h(x_F,0)&=0\\
+h(x_t^j,u_t^j)&>0\text{ } \forall \text{ } x_t^j \in \mathbb{R}^n \setminus \{x_F\},u_t^j\in\mathbb{R}^m\setminus \{0\}
+\end{align}
+and $x_F$ a feasible equilibrium:
+\[
+f(x_F,0)=0.
+\]
+
+\subsection{General definitions}
+State evolution: $x_{t+1}=f(x_t,u_t)$\\
+Cost function: $h(x_k^j,u_k^j)$ with $k$ = timestep, $j$ = iteration\\
+Iteration cost: $J_{0\rightarrow\infty}^j(x_0^j) = \sum_{k=0}^{\infty} h(x_k^j,u_k^j)$ with $x$ and $u$ are \emph{realized states}.\\
+Q-function: $Q^j(x) = \min J_{t\rightarrow\infty}^j(x)$ if $x \in \mathcal{SS}^j$\\
+Optimal cost:
+\[
+J_{0\rightarrow N}^{*,j}(x_t^j) = \min_u \left[\sum_{k=0}^{N-1}h(x_k,u_k)+Q^{j-1}(x_N)\right]
+\]
+Sampled safe set:
+\[
+\mathcal{SS}^j = \left\{ \bigcup_{i\in M^j} \bigcup_{t=0}^\infty x_t^i\right\}
+\]
+and
+\[
+M^j=\left\{ k\in [0,j]: \lim_{t\rightarrow\infty}x_t^k=x_F\right\}
+\]
+By definition, there exists a control sequence for every point in the sampled safe set that drives it to the terminal point $x_F$.
+%\section{Important relations}
+\section{Closed lap LMPC}
+Idea: $x_F^j = x_0^{j+1}$
+\subsection{Feasibility - proof by induction}
+Let at time $t$ of the $j$-th iteration the optimal and feasible solution be:
+\begin{align}
+\mathbf{x}_t^* &= [x_t^*, x_{t+1}^*, \dots ,x_{t+N}^* ]\\
+\mathbf{u}_t^* &= [u_t^*, u_{t+1}^*, \dots ,u_{t+N}^* ]
+\end{align}
+It follows that the optimal state and input are
+\begin{align}
+x_t^* &= x_t^j\\
+u_t^* &= u_t^j
+\end{align}
+Simply: Whenever the LMPC-prediction is feasible, the receding horizon control is feasible as well (independent of open or closed lap).
+
+\subsection{Asymptotic stability}
+Idea: Show that optimal cost $J_{0\rightarrow N}^*$ is a Lyapunov function (decreasing along the closed loop trajectory) for the equilibrium point.
+
+\section{Closed loop LMPC}
+\subsection{Definition of periodicity}
+Introduce periodicity property for the system
+\begin{equation}
+\dot x = f(x,u)
+\end{equation}
+so that
+\begin{equation}\label{eq:periodicity}
+f(x+P,u) = f(x,u)
+\end{equation}
+From eq. \ref{eq:periodicity} one can derive the property for the discrete case:
+\begin{align}
+x_{k+1} &= x_k + T\cdot f(x_k,u_k)\\
+x_{k+1} &= g(x_k,u_k)
+\end{align}
+so that
+\begin{align}
+g(x_k+P,u_k) &= x_k+P + T\cdot f(x_k+P,u_k)\\
+g(x_k+P,u_k) &= x_k+P + T\cdot f(x_k,u_k)\\
+g(x_k+P,u_k) &= g(x_k,u_k)+P
+\end{align}
+with $P$ being the period.
+This also implies that
+\begin{equation}
+    x_0^j = f(x_{end}^{j-1},u_{end})-P
+\end{equation}
+Also for the system
+\begin{equation}
+\dot x = f(x,u) \text{, } x\in\mathbb{R}^n \text{, } u\in\mathbb{R}^m
+\end{equation}
+following equation holds:
+\begin{equation}
+f(x+P,u) = f(x,u) \text{, } P\in \mathbb{R}^n
+\end{equation}
+\subsection{Shifted safe set}
+The shifted safe set collects all states of the current iteration and shifts them by the period.
+\begin{equation}
+    \mathcal{SS}_c^j = \mathcal{X}\cap \left\{\cup_t  \left\{x_t^j+P\right\}\right\}
+\end{equation}
+with $\mathcal{X}$ as the invariant set for which $h(x,u)=0 \forall x\in\mathcal{X}$.
+Create extended safe set:
+\[
+\mathcal{SS}^j = \left\{ \bigcup_{i\in M^j} \bigcup_{t=0}^\infty \left(x_t^i\cup \left(x_t^i+P\right)\right)\right\}
+\]
+
+\end{document}

@@ -1,0 +1,180 @@
+\documentclass[10pt,twoside,a4paper,fleqn]{report}
+
+% Special IDSC styles and commands
+\usepackage[english,mt]{ethidsc}       	
+
+\usepackage{subcaption}	
+\usepackage{wrapfig}
+\usepackage{array}
+\usepackage{changepage}
+\usepackage{mathtools}
+\usepackage{url}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{tikz}
+\renewcommand{\arraystretch}{1.2}
+\usepackage[hidelinks]{hyperref}
+\usepackage{color,soul}
+
+% TIMING DIAGRAM STYLES
+%=======================
+\newcounter{wavenum}
+\setlength{\unitlength}{1cm}
+% advance clock one cycle, not to be called directly
+\newcommand*{\clki}{
+  \draw (t_cur) -- ++(0,.3) -- ++ (.1,0) -- ++ (0,-.6) -- ++ (.1,0) -- ++ (0,.6) -- ++ (.1,0) -- ++ (0,-.6) -- ++ (.1,0) -- ++ (0,.6) -- ++ (.1,0) -- ++ (0,-.6) -- ++ (.1,0) -- ++ (0,.6) -- ++ (.1,0) -- ++ (0,-.6) -- ++ (.1,0) -- ++ (0,.6) -- ++ (.1,0) -- ++ (0,-.6) -- ++ (.1,0) -- ++ (0,.3)
+  
+  %-- ++(.5,0) -- ++(0,-.6) -- ++(.5,0) -- ++(0,.3)
+    node[time] (t_cur) {};
+}
+
+\newcommand*{\bitvector}[3]{
+  \draw[fill=#3] (t_cur) -- ++( .01, .3) -- ++(#2-.02,0) -- ++(.01, -.3)
+                         -- ++(-.01,-.3) -- ++(.02-#2,0) -- cycle;
+  \path (t_cur) -- node[anchor=mid] {#1} ++(#2,0) node[time] (t_cur) {};
+}
+
+% \known{val}{length}
+\newcommand*{\known}[2]{
+    \bitvector{#1}{#2}{white}
+}
+
+% \unknown{length}
+\newcommand*{\unknown}[2][XXX]{
+    \bitvector{#1}{#2}{black!20}
+}
+
+% \bit{1 or 0}{length}
+\newcommand*{\bit}[2]{
+  \draw (t_cur) -- ++(0,.6*#1-.3) -- ++(#2,0) -- ++(0,.3-.6*#1)
+    node[time] (t_cur) {};
+}
+
+% \unknownbit{length}
+\newcommand*{\unknownbit}[1]{
+  \draw[ultra thick,black!50] (t_cur) -- ++(#1,0) node[time] (t_cur) {};
+}
+
+% \nextwave{name}
+\newcommand{\nextwave}[1]{
+  \path (0,\value{wavenum}) node[left] {#1} node[time] (t_cur) {};
+  \addtocounter{wavenum}{-1}
+}
+
+% \clk{name}{period}
+\newcommand{\clk}[2]{
+    \nextwave{#1}
+    \FPeval{\res}{(\wavewidth+1)/2}
+    \FPeval{\reshalf}{#2/2}
+    \foreach \t in {1,2,...,\res}{
+        \bit{\reshalf}{1}
+        \bit{\reshalf}{0}
+    }
+}
+
+% \begin{wave}[clkname]{num_waves}{clock_cycles}
+\newenvironment{wave}[3][clk]{
+  \begin{tikzpicture}[draw=black, yscale=.7,xscale=4]
+    \tikzstyle{time}=[coordinate]
+    \setlength{\unitlength}{1cm}
+    \def\wavewidth{#3}
+    \setcounter{wavenum}{0}
+    \nextwave{#1}
+    \foreach \t in {0,1,...,\wavewidth}{
+      \draw[dotted] (t_cur) +(0,.5) node[above] {$t=\SI{0.\t}{\second}$} -- ++(0,.4-#2);
+      \clki
+    }
+}{\end{tikzpicture}}
+
+
+% Other needed operators
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+% Page header (don't change)____________________________________________________
+\setlength{\parindent}{0em}                 % Disable parindent
+\rhead[\nouppercase{\rightmark}]{\thepage}  % Special headings
+\lhead[\thepage]{\nouppercase{\leftmark}}   % Special headings
+\cfoot{}                                    % Special headings
+
+
+% Title page (please fill in)___________________________________________________
+\title{Repetitive Learning MPC and its application on autonomous race driving}
+
+\studentA{Maximilian Brunner}
+\ethidA{10-945-020}
+\emailA{mabrunne@student.ethz.ch}
+
+\supervision{Ugo Rosolia \\ Prof. Dr. Francesco Borrelli \\ Prof. Dr. Roy Smith }
+\date{January 2017}
+
+%\infopage
+\declaration
+
+% Begin document________________________________________________________________
+\begin{document}
+
+\maketitle 							% Create title page
+
+% Preamble______________________________________________________________________
+\pagenumbering{roman} 				% Begin roman page numbering (i,ii,...)
+\setcounter{tocdepth}{2}
+\tableofcontents
+ \cleardoublepage
+
+\chapter*{Acknowledgement}
+\addcontentsline{toc}{chapter}{Acknowledgement}
+This is the final work of my master studies of Mechanical Engineering at ETH Zurich and UC Berkeley. I would like to thank Professor Borrelli who gave me the chance to work on this thesis together with him and his team at UC Berkeley. I would also like to thank my advisors Ugo Rosolia and Jon Gonzales who always supported me throughout the entire work in both theoretical and practical questions.\\
+I would like to thank my supervisors at ETH Zurich, Prof. Thomas Roesgen and Prof. Roy Smith, for guiding me through my master's program, providing valuable advice throughout my studies and supporting me for my master thesis.\\
+I would also like to thank my parents for giving me the opportunity to follow my studies at ETH Zurich and writing my master thesis at UC Berkeley.\\
+Last but not least I would like to thank all my friends who I met during my course of studies and who showed me different paths one could follow as a student of engineering. I would not be where I am without them.
+ \cleardoublepage
+ 
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+A Learning Model Predictive Control strategy is extended to repetitive systems. The presented controller is able to improve its performance with every iteration by learning from previous iterations. It is applied to an autonomous race driving problem. Simulations on a kinematic and a dynamic bicycle model show the controller's performance. Additionally, the strategy is applied to a 1:10 scale RC car. An estimator using an indoor ultrasound based GPS as well as an IMU and wheel encoders is developed. The system's dynamics are identified online using Linear Regression.
+Experiments are performed on a small race track, reaching maximum velocities of $\SI{3}{\meter\per\second}$.
+%\begin{itemize}
+%\item Repetitive systems
+%\item Learning model predictive control, extension to repetitive systems
+%\item Proof that it works
+%\item Application on race driving, first in theory (simulation)
+%\item Then implementation on real car
+%\item Using an 1:10 RC car, GPS, IMU, Encoders
+%\item Sensor fusion, state estimation
+%\item Real time controlling
+%\item System identification using Linear Regression
+%\item Reduce lap times to ...
+%\item Reach speeds of ... m/s.
+%\item Outlook at the end.
+%\end{itemize}
+
+\cleardoublepage
+
+\input{not}
+\cleardoublepage
+
+% Chapters______________________________________________________________________
+
+\pagestyle{fancy}               	% Fancy headings
+\pagenumbering{arabic}				% Begin arabic page numbering (1,2,...)
+
+\input{introduction}
+\cleardoublepage
+\input{chap2}
+\cleardoublepage
+\input{chap3}
+\cleardoublepage
+\input{chap4}
+
+\cleardoublepage
+\input{conclusion}
+
+% Bibliography__________________________________________________________________
+% Literature (Additional references can be added to the .bib-file manually, or by using, for example, the free application JabRef). Compile in the following order: latex -bibtex -latex -latex
+
+\bibliographystyle{unsrt}
+\bibliography{bib}
+%\nocite{*}
+
+\end{document}

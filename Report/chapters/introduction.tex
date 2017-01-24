@@ -1,0 +1,41 @@
+\chapter{Introduction}
+\section{Background and Motivation}
+In almost every country and every industry, we can see a steady increase and quest for automation today. Sales of industrial robots have more than doubled over the past six years, according to statistics of the International Federation of Robotics \cite{IFR2016}. This is just another evidence of the increasing automation of industry - apart from more public fields such as autonomously driving cars. Today, robots are used for all kinds of tasks, whereas many of these tasks can be characterized as being repetitive, meaning they are designed to repeat the same process over and over again. In order to save costs, time, or other resources, the execution of these tasks often has to be optimized over certain criteria. In complex automation tasks, however, it might be difficult to find the trajectory that optimizes the given process. Previous research like Iterative Learning Control (ILC, \cite{Lee2007}) or Learning Model Predictive Control (LMPC, \cite{Rosolia2016}) has already focused on improving trajectories over many iterations.\\
+As opposed to ILC, the theory of LMPC allows finding an optimal, reference-free trajectory, given a general optimization function. However, so far it has only been tested for batch processes, which start every iteration at the same initial state.\\
+We are now interested in extending this theory to continuous repetitive tasks which are characterized by a smooth transition between iterations, abolishing the need for same initial conditions.
+An example application of improving continuous repetitive tasks is the race driving problem, in which the goal is to minimize the lap time while always starting a new lap from where the previous lap ended. We would like to use this scenario to test the performance of the LMPC on a continuous repetitive system.
+
+%\begin{itemize}
+%\item Increasing use and development of industrial robots over recent years, for production automation in low-wage countries, in metal, electrical, automotive industries, due to higher demand and also progress in research and the need possibilities to make everything even more efficient and automatic (automation).
+%\item Repetitive tasks: industrial robots - batch processes
+%\item Demand for efficient performance in different regards - energy (environment), time and energy cost (economical)
+%\item Application mainly in fabrication, chemistry, biochemistry
+%\item Increasing complexity of systems
+%\item Increasing use of robots for repetitive tasks
+%\item MPC because we can include input and state constraints
+%\item Previous work: Mainly ILC and RC. Already work on MPC in RC tasks with $x_F$=$x_0$. But always only (periodic) reference tracking/rejection on fixed length iterations. Reference is always given and optimal input is calculated.
+%\item Categorization/definition of iterative, repetitive processes/batch processes
+%\item Previous work of Ugo: ILMPC on batch processes
+%\item Now this work: RLMPC on continuous processes
+%\item \cite{Wang2009} makes a good categorization of different types of processes: He distinguishes between batch processes and continuous processes. Batch processes are intermittently run as opposed to continuous processes which are continuous even through transitions of runs.
+%\item This thesis: Application on race driving
+%\item Lots of previous research in race driving
+%\item Previous work: Autonomous racing using MPCC applied on 1:43 cars \cite{Liniger2015}
+%\end{itemize}
+
+\section{Problem description, previous work, and goal}
+We would like to develop an efficient method that finds an optimal trajectory in a continuous repetitive system. We would like to show the practicability of this method in the race driving scenario in simulation and then apply it on a 1:10 scale remote-controlled race car. For that, we need to develop a technique that estimates all necessary states of the systems, using a low-cost system that is fast and easy to set up. We would also like to use an online system identification strategy that allows us to account for undetected or unknown system dynamics. All these tasks have to be computational efficient so that we can perform experiments in real time, driving the car at high velocities.\\
+There has been research on finding the optimal time trajectory through a given race track, most of them try to find a time optimum by computationally expensive offline optimization or sophisticated online methods like MPCC \cite{Liniger2015}.
+This thesis is organized as follows: ...
+%\begin{itemize}
+%\item Develop an efficient method that finds the optimal trajectory in a repetitive system.
+%\item Race driving means operating at the limits of its system dynamics
+%\item Difficulty: Estimate lateral dynamics using low cost/high noise sensors
+%\item LMPC only valid for no model mismatch, so also identify the model dynamics in real time
+%\item Find out what defines repetitive systems
+%\item Test this framework on an autonomous car
+%\item Applied system: Race driving
+%\item Implementation on small RC car
+%\item Previous work: LMPC on iterative tasks
+%\item End of this section: How this paper is organized...
+%\end{itemize}

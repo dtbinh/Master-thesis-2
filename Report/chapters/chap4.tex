@@ -1,0 +1,395 @@
+\chapter{Implementation}
+In this chapter the presented control strategy is implemented for a 1:10 scale remote-controlled car. The car is a commercially available hobby race car of the model "Basher RZ-4 1/10 Rally Racer" which has been modified to include sensors and onboard CPUs. First, the system and its available sensors and actuators are introduced. A system identification strategy is presented which allows online estimation of system dynamics. Next, the state estimation and experiments are shown.\\
+Figure \ref{fig:controlStructure} shows a simplified control block diagram. After an introduction of the system, this chapter goes through the blocks of system identification, state estimation, and control.
+\begin{figure}[ht]
+    \centering
+  \includegraphics{../../Figures/Illustrator/ControlDiagram.pdf}
+    \caption{Control structure}
+    \label{fig:controlStructure}
+\end{figure}
+
+\section{Introduction to the BARC}
+The car used for our experiments is a remote controlled race car that has been modified by the MPC Lab at UC Berkeley to easily test new control techniques. This car is called Berkeley Autonomous Race Car (BARC, \cite{BARC}) and it has been used previously in student projects. The basic setup is shown in figure \ref{fig:BARC}.
+\begin{figure}[ht]
+    \centering
+  \includegraphics[width=0.8\textwidth]{../../Figures/BARC/IMG_1047.pdf}
+    \caption{Basic BARC setup}
+    \label{fig:BARC}
+\end{figure}
+
+Aside from standard actuators (brushless DC motor and steering servo), it features two onboard CPUs. The first CPU is an Arduino Nano which allows low-level control of the actuators as well as receiving and simple processing of sensor data. The second CPU is a Samsung Exynos 5422, provided by an Odroid XU4 single board computer. The Exynos CPU family has been used since 2010 on various smartphones like the Samsung Galaxy S. This processor is used for high-level computing (like communication with USB devices and external computers).
+\subsection{Sensors}
+For the purpose of race driving the estimation of absolute position, velocity and orientation are needed. The main idea in the selection of sensors was to provide a low cost solution that is not bound to a specific testing area. This is why following sensors were chosen:
+\begin{description}
+\item[IMU] The Inertial Measurement Unit measures linear and angular accelerations as well as the car's current orientation in space. The IMU used on the BARC is a myAHRS+ which runs at a frequency of 50 Hertz. It is directly connected to the Odroid through a USB port.
+\item[Encoders] Each wheel contains two magnetically operating encoders which can be used to measure the car's velocity. These measurements are only reliable as long as the car is not drifting and as long as the wheels are spinning. The frequency of these measurements is directly related to the rotating speed of the wheels. The encoders are connected to the arduino and send a signal at each half spin of the wheel. The arduino sends the average speed resulting form the signals to the odroid.
+% Yes, actually there are 4 encoders, but we are only able to use two of them.
+\item[GPS] To determine the absolute position of the car, an indoor positioning system from \emph{Marvelmind robotics} \cite{marvelmind} is used. Similar to the Global Positioning System (GPS), it determines the position of the car by triangulating the distances between stationary beacons around the racetrack and a mobile beacon which is fixed to the car. Distances are measured by the time of flight of ultrasound signals between all beacons.\\
+The system measures the position with deviations of about $\SI{2}{\centi\meter}$ at a varying frequency between 10 and 16 Hertz.
+\end{description}
+
+\subsection{Input mapping}\label{sec:inputMapping}
+While the MPC formulation calculates inputs of acceleration and steering in SI units, the actuators are controlled by the Arduino using pulse-width-modulation (PWM) signals. This section first describes the procedure to find the steering mapping followed by the acceleration mapping.
+\paragraph{Steering mapping} To identify the steering mapping, different steering PWM signals are sent to the steering servo while driving at a constant acceleration signal. Due to electromagnetic motor drag, this leads to a constant velocity while performing circles of different radii. A low velocity is used so that an ideal kinematic bicycle model can be assumed. Using the equations of the kinematic bicycle model, the steering angle $\delta_F$ can be inferred:
+\begin{equation}\label{eq:deltaF}
+\delta_F = \arctan\left(\frac{\dot\psi\cdot(L_F+L_R)}{v_x}\right)
+\end{equation}
+It can be seen that only $\dot \psi$ and $v_x$ need to be measured to calculate $\delta_F$. Both quantities are measured with good accuracy by the IMU and encoders.
+Running this open loop test and approximating the measurements with an affine function, following results are obtained:
+\begin{equation}
+u_{PWM} = 89.8\cdot \delta_F + 90.8
+\end{equation}
+\begin{figure}[ht]
+    \centering
+  \input{../../Figures/Mapping/d_f_mapping.pgf}
+    \caption{Steering mapping}
+    \label{fig:d_f_mapping}
+\end{figure}
+We could observe a maximum steering angle of $\SI{0.3}{\radian}$. This leads, in combination with the wheelbase $L_R+L_F$, to a minimum turning radius of
+\begin{equation}
+R_{min} = \frac{L_R+L_F}{\tan(\delta_F)} = \SI{0.81}{\meter},
+\end{equation}
+which yields a maximum curvature of $c_{max}=\SI{1.24}{\per\meter}$.\\
+Open loop experiments with fast changing steering inputs showed that the servo exhibits a short time delay of about 0.2 seconds. This delay is shown in fig. \ref{fig:d_f_delay}.
+\begin{figure}[ht]
+    \centering
+      \input{../../Figures/Mapping/d_f_delay.pgf}
+    \caption{Steering delay}
+    \label{fig:d_f_delay}
+\end{figure}
+Since the LMPC formulation uses a sample time of $dt=\SI{0.1}{\second}$, we model this delay as a 2-step delay:
+\begin{equation}
+x_{k+1}=f(x_k,a_k,\delta_{F,k-2}).
+\end{equation}
+\paragraph{Acceleration mapping} The acceleration mapping consists of two different regimes: (positive) acceleration and breaking (negative acceleration). We found out that these two regimes can be described by two linear functions. Additionally, we have to find the motor drag which we model as a first order damping system in the longitudinal dynamics:
+\begin{align}
+\dot v &= a - c_M\cdot v\\
+\text{with } a&=\begin{cases}
+c_{1}^+\cdot u_{PWM}+c_{2}^+ &\text{ if } a>0,\\
+c_{1}^-\cdot u_{PWM}+c_{2}^- &\text{ if } a<0.
+\end{cases}
+\end{align}
+Adding the two linear mapping functions for acceleration and breaking we need to determine 5 parameters:
+\begin{align}
+\dot v &= c_{1}^+\cdot u_{PWM}+c_{2}^+ - c_M\cdot v\ \forall \dot v > 0\\
+\dot v &= c_{1}^-\cdot u_{PWM}+c_{2}^- - c_M\cdot v\ \forall \dot v < 0
+\end{align}
+To identify the coefficients of these two regimes, two groups of open loop tests are performed: Firstly, different (positive) accelerations are sent to the motor for a fixed interval of 4 seconds before the car is stopped. Secondly, the car is accelerated and then decelerated by sending different (negative) accelerations.
+
+The resulting correlations can be approximated by two affine functions, where one describes the positive and the other one describes the negative acceleration region.
+
+We received following results for the coefficients:
+\begin{table}[h!]
+\centering
+\begin{tabular}{c|c}
+Coefficient & Value\\
+\hline
+$c_1^+$ & 0.162\\
+$c_2^+$ & -14.7\\
+$c_1^+$ & 0.0149\\
+$c_2^+$ & -1.47\\
+$c_M$ & 0.5
+\end{tabular}
+\caption{Pacejka coefficients for different road conditions}
+\label{tab:v_mapping}
+\end{table}
+
+Both the linear function and the measured accelerations are illustrated in fig. \ref{fig:v_over_u}.
+
+\begin{figure}[ht]
+    \centering
+      \input{../../Figures/Mapping/v_over_u.pgf}
+    \caption{Acceleration mapping}
+    \label{fig:v_over_u}
+\end{figure}
+
+
+%plot acceleration/deceleration inputs and velocities. Plot correlations.
+
+\section{System Identification}
+In order to provide an accurate model to the MPC, the system's dynamics are identified at each time step. The dynamic bicycle model from eq. \ref{eq:dynModel} is used to derive a Linear Regression model that uses functions of the system's states as features. State estimates from previous laps are then used to calculate current parameters $\theta_{i,j}$.
+
+Linear Regression model of the dynamic bicycle model:
+\begin{align}
+    v_{x,k+1} - v_{x,k}&= \theta_{x,1} \cdot v_{y,k} \cdot \dot\psi_k + \theta_{x,2}\cdot v_{x,k}  + \theta_{x,3}\cdot a_k\\
+    v_{y,k+1}- v_{y,k} &= \theta_{y,1}\cdot  \frac{v_{y,k}}{v_{x,k}}+\theta_{y,2}\cdot v_{x,k}\dot\psi_k + \theta_{y,3}\cdot \frac{\dot\psi_k}{v_{x,k}}+\theta_{y,4}\cdot \delta_k\\
+    \dot\psi_{k+1}-\dot\psi_k &= \theta_{\psi,1}\cdot \frac{\dot\psi_k}{v_{x,k}}+\theta_{\psi,2}\cdot \frac{v_{y,k}}{v_{x,k}}+\theta_{\psi,3}\cdot \delta_k
+\end{align}
+with states $v_x$, $v_y$, $\dot \psi$ and parameters $\theta_{i,j}$. The features $\bm{X}$ of this Linear Regression problem are functions of the states and inputs. Using multiple samples $n$, each equation can be rewritten as
+\begin{equation}
+\bm{y}=\bm{X\theta}.
+\end{equation}
+Equation \ref{eq:LRvx} shows the equations for the LR of $v_x$:
+\begin{align}
+\label{eq:LRvx}
+\bm{y} = \begin{pmatrix}
+v_{x,2} - v_{x,1}\\
+v_{x,3} - v_{x,2}\\
+\vdots\\
+v_{x,n} - v_{x,n-1}
+\end{pmatrix} &&
+\bm{X} = \begin{pmatrix}
+v_{y,1} & \dot\psi_{1} & a_{1}\\
+v_{y,2} & \dot\psi_{2} & a_{2}\\
+\vdots\\
+v_{y,n-1} & \dot\psi_{n-1} & a_{n-1}
+\end{pmatrix}&&
+\bm{\theta}=\begin{pmatrix}
+\theta_{x,1}\\
+\theta_{x,2}\\
+\theta_{x,3}
+\end{pmatrix}
+\end{align}
+The LR equations for $v_y$ and $\dot\psi$ can be writte n in the same way.\\
+To determine the optimal parameters $\bm{\theta}^*$, following minimization has to be solved:
+\begin{equation}
+\bm{\theta}^* = \argmin_{\bm{\theta}} \| \bm{X\theta}-\bm{y} \|_2
+\end{equation}
+There are different approaches to solve this problem, in this case the \emph{normal equation} method is used. This leads to following analytic solution:
+\begin{equation}
+\bm{\theta}^* = (\bm{X}^T \bm{X})^{-1}\bm{X}^T \bm{y}
+\end{equation}
+Since we are using about $n=100...1000$ samples, the calculation of the inverse of $\bm{X}^T \bm{X}$ is still sufficiently fast. However, if we were to use even more samples, other methods such as \emph{gradient descent} might work faster.
+\section{State estimation}
+This section presents the sensor fusion and state estimation. A good state estimation should filter out the sensor noise and drifts. A common approach would use a Kalman filter that knows the system's model and a covariance matrix to predict and determine the most probable current state estimate. However, since the previously mentioned system identification assumes no prior model knowledge, we cannot use a given model for state estimation.\\
+Therefore, integrating and smoothing functions which do not account for system dynamics would be another approach to measure current state estimates. However, this approach would not be able to reliably predict the heading $\psi$ since its sensor measurement is distorted by its drift.\\
+Various different techniques have been tried in the course of this thesis and following technique proved to be working best. It combines two Extended Kalman filters, one of which assumes a kinematic bicycle model whereas the other one does not know any bicycle dynamics. The filter model is illustrated in fig \ref{fig:filter_model}.
+
+\begin{figure}[ht]
+    \centering
+      \includegraphics{../../Figures/Illustrator/FilterModel.pdf}
+    \caption{Filter model}
+    \label{fig:filter_model}
+\end{figure}
+This filtering approach is based on the assumption that only the kinematic bicycle model is able to estimate the current heading angle $\hat\psi$ using measurements of coordinates and velocity, while the kinematic model would not be able to account for the drift in the $\psi$ measurement. This is why the kinematic bicycle model is used to calculate the heading angle as well as the inertial coordinates. On the other hand, the kinematic model is well suited to combine measurements of accelerations, velocities, and position, which is why we use this model for the estimation of the yaw rate and velocities.
+
+\subsection{Extended Kalman Filter}
+Kalman filters provide a general tool to calculate a state estimate using noisy and/or biased sensor measurements. The standard Kalman filter uses a linear model of the system in order to calculate the most probable state from a set of different state measurements.\\
+Following general procedure has been taken from \cite{Bar-Shalom}.
+The extended Kalman filter is based on the same principles as the standard Kalman filter but it allows to use a nonlinear model by linearizing the model at each time step.\\
+The state estimation always consists of two steps: The \emph{Prediction step} and the \emph{Update step}. The first step calculates a prediction of the next state $\hat{\bm{x}}_{k|k-1}$ based on the previous state estimate $\hat{\bm{x}}_{k-1|k-1}$ and the control input $\bm{u}_{k-1}$. The update step corrects this prediction with the new measurement $\bm{z}_k$. The final state estimate is calculated using the Kalman gain $\bm{K}_k$. Both the model and measurement equations are linearized in each step.\\
+Prediction:
+\begin{align}
+\hat{\bm{x}}_{k|k-1} &= f(\hat{\bm{x}}_{k-1|k-1},\bm{u}_{k-1})\\
+\bm{P}_{k|k-1} &= \bm{F}_{k-1} \bm{P}_{k-1|k-1} \bm{F}_{k-1}^T + \bm{Q}_{k-1}
+\end{align}
+Update:
+\begin{align}
+\tilde{\bm{y}}_k &= \bm{z}_k - h(\hat{\bm{x}}_{k|k-1})\\
+\bm{S}_k &= \bm{H}_k \bm{P}_{k|k-1} \bm{H}_k^T + \bm{R}_k\\
+\bm{K}_k &= \bm{P}_{k|k-1}\bm{H}_k^T \bm{S}_k^{-1}\\
+\hat{\bm{x}}_{k|k} &= \hat{\bm{x}}_{k|k-1} + \bm{K}_k \tilde{\bm{y}}_k\\
+\bm{P}_{k|k} &= (\bm{I}-\bm{K}_k \bm{H}_k)\bm{P}_{k|k-1}
+\end{align}
+
+The predicted and updated estimate covariance $\bm{P}_{k|k-1}$ and $\bm{P}_{k|k}$, respectively, is a measure for the uncertainty of the state estimate. The process noise matrix $\bm{Q}$ is a measure for the uncertainty of the model, it is usually determined in experiments. The measurement noise matrix $\bm{R}$ depends on the noise values of the sensors. They are often provided in sensor data sheets or can otherwise be measured in experiments. The state transition and observation matrices $\bm F_k$ and $\bm{H}_k$ are the linearized functions $f(\bm{x},\bm{u})$ and $h(\bm{x})$:
+\begin{align}
+\bm{F}_k &= \left. \frac{\partial f}{\partial \bm{x}} \right|_{\hat{\bm{x}}_{k|k},\bm{u}_k}\\
+\bm{H}_k &= \left. \frac{\partial h}{\partial \bm{x}} \right|_{\hat{\bm{x}}_{k|k-1}}
+\end{align}
+\subsection{Filter model}
+The first filter features a kinematic bicycle model, eq. \ref{eq:kinKalman} shows its model equations:
+\begin{align}
+\begin{split}\label{eq:kinKalman}
+    \dot x &= v \cdot \cos (\psi + \beta)\\
+    \dot y &= v \cdot \sin (\psi + \beta)\\
+    \dot \psi &= \frac{v}{L_R}\cdot\sin(\beta)\\
+    \dot v &= a - c_M\cdot v\\
+    \dot d_\psi &= 0
+\end{split}
+\end{align}
+with heading drift $d_\psi$.
+There are two physical parameters, the first one is the distance $L_R$ between the rear axle and the GPS sensor which is measured as $L_R=\SI{0.125}{\meter}$. The second is the motor drag $c_M$ which was estimated in section \ref{sec:inputMapping} as $c_M=0.5$.\\
+The measurement vector contains GPS, Encoder and heading measurements:
+\begin{equation}
+\bm{z} = \begin{pmatrix}
+x_m&y_m&\psi_m&v_m
+\end{pmatrix}^T,
+\end{equation}
+where the subscript $m$ denotes measured values. This leads to following measurement model:
+\begin{equation}
+h(\hat{\bm{x}}_{k|k-1}) = \begin{pmatrix}
+1 & 0 & 0 & 0 & 0\\
+0 & 1 & 0 & 0 & 0\\
+0 & 0 & 1 & 0 & 1\\
+0 & 0 & 0 & 1 & 0
+\end{pmatrix} \hat{\bm{x}}_{k|k-1}=
+\begin{pmatrix}
+\hat x\\
+\hat y\\
+\hat \psi + \hat d_\psi\\
+\hat v
+\end{pmatrix}
+\end{equation} 
+The second filter features a pure kinematic motion model from \cite{Caron2006} which integrates accelerations to find velocities and positions. Eq. \ref{eq:dynKalman} shows its model equations:
+\begin{align}
+\begin{split}\label{eq:dynKalman}
+    \dot x &= \cos(\psi) v_x - \sin(\psi) v_y\\
+    \dot y &= \sin(\psi) v_x + \cos(\psi) v_y\\
+    \dot v_x &= a_x + \dot \psi v_y\\
+    \dot v_y &= a_y - \dot \psi v_x\\
+    \dot \psi &= \dot \psi\\
+    \ddot \psi  &= 0\\
+    \dot a_x &= 0\\
+    \dot a_y &= 0\\
+    \dot d_\psi &= 0
+\end{split}
+\end{align}
+It uses the longitudinal and angular acceleration measurements of the IMU and position measurements of the GPS. Since the car's suspension leads to strong tilting motions in curves, the measurements of $a_y$ are distorted significantly. In order to support a correct estimation of $v_y$ and to reduce the effect of drift errors in $a_y$, the system additionally receives artificial measurements of $v_x$ and $v_y$. These are constructed by following relations:
+\begin{align*}
+v_{x,m} &= v_m\cos(\delta_F)\\
+v_{y,m} &= v_m\sin(\delta_F)
+\end{align*}
+where $v$ is the encoder measurement and $\delta_F$ the control input.
+Thus, the measurement vector of the second filter uses following measurements:
+\begin{equation}
+\bm{z}=\begin{pmatrix}x_m&y_m&v_{x,m}&v_{y,m}&\psi_m&\dot\psi_m&\ddot\psi_m&a_{x,m}&a_{y,m}\end{pmatrix}^T
+\end{equation}
+% Tuning of Q and R matrices
+\paragraph{Frequency of the filter}
+The extended Kalman filter runs at a frequency of 50 Hertz and assumes that all measurements are received at the same time and with equal frequencies. However, since we are using different sensors at different frequencies, we are using following strategy for each sensor:
+\begin{description}
+\item[IMU] The IMU provides data at the frequency of the Kalman filter itself, $\SI{50}{\hertz}$. This is why we  can use this data directly.
+\item[GPS] The indoor GPS provides measurements at varying frequencies between 10 and 16 Hertz, whereas there are times when no measurement are received for up to one second. In order to account for this uncertainty, we always extrapolate the previously received data by a polynomial to the time of the Kalman filter update. This extrapolation makes sure that even longer measurement breaks don't pose any difficulties to the estimator.
+\item[Encoder] Three of the car's wheels are equipped with encoders, using 2 magnets each. The frequency of signals from these encoders can be calculated as follows:
+\begin{equation}
+f =\frac{1}{T}=\frac{v}{\pi r}
+\end{equation}
+with the velocity $v$ and the wheel radius $r$. This means that at a velocity of $\SI{1.0}{\meter\per\second}$ and for a wheel radius of $\SI{3.6}{\centi\meter}$, we receive a velocity measurement from each wheel at a rate of about $\SI{9}{\hertz}$. These measurements are not synchronized as the wheels start at different angles. All measurements are received by the arduino, averaged, and then sent to the filter at a constant rate of $\SI{50}{\hertz}$. Since even with three encoders we can't reach a real update rate of 50 Hertz, we assume a rather high encoder measurement noise in the measurement noise matrix $\bm{R}$ to account for equal consecutive measurements.
+\end{description}
+\subsection{Mapping to the track reference frame}
+The estimator discussed above returns a state estimate in the inertial frame which then needs to be transformed into the track reference frame. The coordinates in the track reference frame are the curvilinear abscissa $s$, the lateral position error $e_Y$, and the heading error $e_\psi$. The procedure for this transformation is described below.\\
+We assume that the track is given by $n$ equidistant vertices with coordinates $\bm{x}_i = \begin{pmatrix}
+x_i&y_i
+\end{pmatrix},i=1...n$.
+
+\begin{enumerate}
+\item Find the closest vertex $\bm{x}_i$ of the track to the current position of the car
+\item Select a set of vertices around vertex $i$
+\item Use this set to approximate the track locally using a polynom of $p$-th order, returning functions for the coordinates $(x,y)=f(s)$ and curvature $c=f(s)$
+\item Use these functions to calculate the current curvilinear abscissa $s$, lateral position $e_Y$ and heading error $e_\psi$.
+\end{enumerate}
+%The procedure is shown in fig. \ref{fig:s_ey_poly}.
+%\begin{figure}[ht]
+%    \centering
+%      \includegraphics{../../Figures/Mapping/s_ey.pdf}
+%    \caption{$s-e_Y-$frame}
+%    \label{fig:s_ey_poly}
+%\end{figure}
+
+\section{Implementation}
+The estimator and MPC solver are implemented in the ROS framework (Robot Operating System, \cite{ros}). The sensor data is sent from the BARC to a more powerful CPU (Macbook Pro 2010, 2.4 GHz) which solves the MPC problem at a rate of 10 Hertz and sends the optimal input to the BARC. The setup is illustrated in fig. \ref{fig:architecture}.
+\begin{figure}[ht]
+    \centering
+      \includegraphics{../../Figures/Illustrator/Architecture.pdf}
+    \caption{Software/Hardware setup}
+    \label{fig:architecture}
+\end{figure}
+The ROS framework manages the execution of all scripts and makes sure that they are running at their specified frequencies. It also manages the wireless communication between the odroid and the computer.\\
+The estimator is a python script that runs at a constant frequency of $\SI{50}{\hertz}$, which is the highest frequency at which measurements are received by the IMU. Both the encoders and the GPS are running at lower or variable frequencies between 10 and $\SI{50}{\hertz}$.\\
+The MPC optimization problem is solved by Ipopt \cite{ipopt} which is executed by a script written in Julia 0.4.6 \cite{julia}. It solves the LMPC problem at a constant frequency of $\SI{10}{\hertz}$ and sends the optimal control input to the BARC. At the same time, it receives and saves all state estimates from the estimator.\\
+Since we need to maintain a constant input rate of $\SI{10}{\hertz}$ while the optimization process can last different times (at most $\SI{0.1}{\second}$), the commands are always sent at the beginning of one time step. The MPC solver uses an initial state that is predicted by 0.1 seconds from the most recent estimated state. Figure \ref{fig:timing} shows the timing diagram of ROS nodes and messages.
+\begin{figure}[ht]
+    \centering
+\begin{wave}{4}{2}
+\nextwave{Estimator} \known{}{0.05}\unknown[]{0.15}
+                \known{}{0.07}\unknown[]{0.13}
+                \known{}{0.04}\unknown[]{0.16}
+                \known{}{0.06}\unknown[]{0.14}
+                \known{}{0.08}\unknown[]{0.12}
+                \known{}{0.09}\unknown[]{0.11}
+                \known{}{0.06}\unknown[]{0.14}
+                \known{}{0.05}\unknown[]{0.15}
+                \known{}{0.09}\unknown[]{0.11}
+                \known{}{0.04}\unknown[]{0.16}
+                \known{}{0.03}\unknown[]{0.17}
+                \known{}{0.07}\unknown[]{0.13}
+                \known{}{0.08}\unknown[]{0.12}
+                \known{}{0.06}\unknown[]{0.14}
+                \known{}{0.07}\unknown[]{0.13}
+\nextwave{MPC} \known{MPC}{0.7}\unknown[]{0.3}\known{MPC}{0.5}\unknown[]{0.5}\known{MPC}{0.8}\unknown[]{0.2}
+\nextwave{Command} \known{}{0.05}\unknown[]{0.95}
+                \known{}{0.05}\unknown[]{0.95}
+                \known{}{0.05}\unknown[]{0.95}
+
+\end{wave}
+\caption{Timing diagram}
+    \label{fig:timing}
+\end{figure}
+
+Below are described all steps that are performed during one time step (asynchronously):
+\begin{enumerate}
+\item State estimation
+\begin{enumerate}
+\item Read sensor data
+\item Calculate the current state in the inertial frame
+\item Transform the state to the track frame
+\item Calculate polynomial coefficients that approximate the curvature locally
+\end{enumerate}
+\item System Identification
+\begin{enumerate}
+\item Select data from previous and current lap
+\item Calculate Matrices of features
+\item Calculate parameters of system dynamics using Linear Regression
+\end{enumerate}
+\item Approximate safe set and cost function
+\begin{enumerate}
+\item Select locally near data from previous laps
+\item Calculate polynomials that approximate this data to construct the safe set
+\end{enumerate}
+\item Solve the LMPC problem
+\begin{enumerate}
+\item Use the state estimate as initial state for the MPC formulation
+\item Minimize the cost function, using state dynamics from the Linear Regression and curvature as well as the safe set and terminal cost function
+\item Send the optimal input to the actuators
+\end{enumerate}
+\end{enumerate}
+\section{Experiments}
+The experiments were performed in a closed space at UC Berkeley. The available area had a size of about 5 by 8 meters and provided enough space for a simple race track.\\
+We chose a race track that fits the available area while still providing turns in different directions with the maximum possible curvature of $\SI{1.24}{\per\meter}$. The curvature is shown in fig. \ref{fig:exp_curv}. The track length is $\SI{19}{\meter}$.
+We used a constant sample size for the system identification of 120 points per lap which corresponds to $\SI{2.4}{\second}$ since the state estimation runs at $\SI{50}{\hertz}$. We also used an LMPC horizon length of $N=12$ which corresponds to a prediction time of $\SI{1.2}{\second}$. This horizon is a trade-off between fast learning and fast solver times.
+\begin{figure}[ht]
+    \centering
+      \input{../../Figures/Experiments/curvature.pgf}
+    \caption{Curvature of the experimental race track}
+    \label{fig:exp_curv}
+\end{figure}
+
+\paragraph{Results and discussion}
+After driving 3 laps using a path following MPC with a kinematic bicycle model at $v_{Ref}=\SI{1.0}{\meter\per\second}$, the LMPC strategy starts in the 4\textsuperscript{th} lap. The reference speed yields a path following lap time of about $t_{pf}=\SI{21}{\second}$. We can see in fig. \ref{fig:exp_lapTime} that the lap time decreases rapidly within the first few learning iterations before it converges to a trajectory that takes about $t_{22}=\SI{7.5}{\second}$ at an average speed of $\SI{2.5}{\meter\per\second}$.\\
+Figures \ref{fig:exp_v} and \ref{fig:exp_e_Y} illustrate the converging behavior of velocities and lateral deviation. Even though especially lateral velocity measurements are very noisy, the combination of system identification and LMPC manages to converge to an optimal trajectory.
+Figure \ref{fig:exp_v_over_xy} visualizes the car's velocity at each point of the track during one optimal iteration. \\
+As we can see, the iteration cost in fig. \ref{fig:exp_lapTime} does not continuously decrease but instead it oscillates around a mean value of about $\SI{7.5}{\second}$. This is due to the model mismatch between the MPC formulation and the real car dynamics, which also arises from inaccurate measurements that are used for the system identification. Robust ILMPC and how to handle model mismatch is subject of current research.\\
+We found out that, in order to ensure feasibility and to avoid numerical issues, the coefficients of the soft lane constraints from eq. \ref{eq:softLaneConstraints} had to be chosen in such a way that they can always be violated by a small amount. In contrast, too high values in combination with model mismatch can lead to solver difficulties.
+
+% Plot solver times?
+% Find optimal trajectory for this kind of track and plot it!
+% First order filter for velocity?
+
+\begin{figure}[ht]
+    \centering
+      \input{../../Figures/Experiments/lapTime.pgf}
+    \caption{Lap times}
+    \label{fig:exp_lapTime}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+      \input{../../Figures/Experiments/v.pgf}
+    \caption{Longitudinal and lateral velocity}
+    \label{fig:exp_v}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+      \input{../../Figures/Experiments/e_Y.pgf}
+    \caption{Lateral deviation}
+    \label{fig:exp_e_Y}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+      \input{../../Figures/Experiments/v_over_xy.pgf}
+    \caption{Velocity over x,y}
+    \label{fig:exp_v_over_xy}
+\end{figure}

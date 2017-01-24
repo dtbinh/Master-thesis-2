@@ -1,0 +1,57 @@
+\chapter*{Notation and Physical Constants}
+\addcontentsline{toc}{chapter}{Notation and Physical Constants}
+The following abbreviations will commonly be used throughout this thesis:
+\begin{itemize}
+	\item MPC: Model Predictive Control
+	\item LMPC: Learning Model Predictive Control
+	\item RLMPC: Repetitive Learning Model Predictive Control
+	\item BARC: Berkeley Autonomous Race Car
+	\item LR: Linear Regression
+\end{itemize}
+The states and inputs of the vehicle are:
+\begin{itemize}
+	\item States:
+	\begin{itemize}
+		\item $x,y$: inertial position
+		\item $s$: curvilinear abscissa
+		\item $v_x$: longitudinal velocity
+		\item $v_y$: lateral velocity
+		\item $a_x$: longitudinal acceleration
+		\item $a_y$: lateral acceleration
+		\item $v$: total velocity
+		\item $\psi$: heading angle
+		\item $\dot \psi$: yaw rate, angular velocity
+		\item $\ddot \psi$: angular acceleration
+		\item $e_\psi$: heading angle error
+		\item $e_y$: lateral distance to the center line, lateral position error
+	\end{itemize}
+	\item Control Inputs:
+	\begin{itemize}
+		\item $ a$: acceleration
+		\item $\delta_F$: steering angle (of the front wheels)	
+	\end{itemize}
+\end{itemize}
+Mathematical variables:\\
+Note that in general, vectors are denoted bold lower case letters, matrices are bold capital  letters, and scalars are written in light letters.
+\begin{itemize}
+\item $N$: number prediction steps (horizon length)
+\item $\bm{x}_t^j$: State at time step $t$ in iteration $j$
+\item $J^j=J_{0\rightarrow\infty}^*(\bm{x}_0^j)$: Total cost of iteration $j$
+\item $J_{t\rightarrow t+N}^{\scalebox{0.4}{LMPC},j}(\bm{x}_t^j)$: optimal prediction cost at $x_t^j$
+\item $h(\bm{x},\bm{u})$: Stage cost
+\item $Q^j$: Q-function
+
+\end{itemize}
+The physical constants and system parameters are:
+\begin{itemize}
+\item Gravity: $g = \SI{9.81}{\meter\per\square\second}$
+\item Overall drag coefficient: $c_D = 0.5$
+
+\item Car mass: $m=\SI{2.0}{\kilo\gram}$
+\item Car moment of inertia: $I_z=\SI{0.03}{\kilo\gram\square\meter}$
+\item Wheel radius: $r_w = \SI{0.036}{\meter}$
+\item Distance to rear axles: $L_R = \SI{0.125}{\meter}$
+\item Distance to front axles: $L_F = \SI{0.125}{\meter}$
+\item Road friction coefficient: $\mu = 0.8$
+
+\end{itemize}
