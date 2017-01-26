@@ -197,6 +197,18 @@ J_{0\rightarrow N}^{\scalebox{0.4}{LMPC},j+1}(x_0^{j+1})\geq J_{0\rightarrow N}^
 This result essentially just shows that the LMPC cost at the initial state of lap $j+1$ is larger or equal to the LMPC cost at the same state, but evaluated in the previous lap $j$.\\
 Question: Can we still assume stability through iterations since the cost function is stable all the way \emph{to} the switching condition and it is stable starting \emph{from} the switching condition?
 \paragraph{Non decreasing iteration cost} Using the strategy above, we will have to focus on the transition between two laps. The "problem" is that - at the beginning of an iteration, right after the transition - the controller doesn't even notice that laps were switched. The safe set is the same and the Q function only increased by a constant value.
+\subsection{Analysis and discussion of the proposed method}
+The previous section extended the LMPC strategy for batch processes by stacking safe sets and iteration cost functions.\\
+Since the LMPC function minimizes over stacks of 2 iterations, it can happen that the single iteration cost decreases 2-stepwise while the overall 2-iteration cost decreases continuously (see fig. \ref{fig:dynDoubleItCost}).
+
+\begin{figure}[ht]
+    \centering
+      \input{../../Figures/Simulation/Dyn_double_it_cost.pgf}
+    \caption{Double iteration cost}
+    \label{fig:dynDoubleItCost}
+\end{figure}
+
+
 % Explain concept of going to 2*P
 % Define J (not to infinity but only to P)
 % Define stacked Q and the two areas (< P and >P)
