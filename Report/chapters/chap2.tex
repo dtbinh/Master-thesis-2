@@ -1,12 +1,11 @@
 \chapter{Repetitive Learning Model Predictive Control}
-This chapter gives a general introduction to the concept of Model Predictive Control (MPC). Based on that, the theory of Learning Model Predictive Control (LMPC) is presented which is then extended to repetitive tasks. %Additionally, simulations of LTI systems are performed and analyzed to verify its practicability.
+This chapter gives a general introduction to the concept of Model Predictive Control (MPC). Based on that, the theory of Learning Model Predictive Control (LMPC) for periodic/repetitive tasks is presented. %Additionally, simulations of LTI systems are performed and analyzed to verify its practicability.
 
 \section{Model Predictive Control}
 Model Predictive Control is a concept that has been developed since the late 1970s, starting from Chemical Process Industries \cite{garcia1989model}. Since then, increasing computational power which is essential to quickly solving complex optimization problems has helped further research on this method and has extended it to other fields beyond chemical industries.
 %One strong advantage of MPC is its ability to include state and input constraints 
 This section gives a brief overview on the mathematical concepts of MPC \cite{Borrelli2003}.\\
-In general, an MPC controller predicts the state dynamics over a finite time horizon, given a system model and control inputs. An objective function is minimized to find the optimal control input which is then applied to the system.\\
-Assume that a system can be described by its discrete time state equations
+Given the discrete time system
 \begin{equation}
 \bm{x}_{t+1}=f(\bm{x}_t,\bm{u}_t),
 \end{equation}
@@ -14,11 +13,12 @@ where $\bm{x}\in \mathbb{R}^n$ and $\bm{u}\in\mathbb{R}^m$ are the system state 
 \begin{equation}
 \bm{x}_t\in\mathcal{X},\ \bm{u}_t\in\mathcal{U},\ \forall t\in\mathbb{Z}_{0+}.
 \end{equation}
-Additionally, the \emph{objective function} from time instant $0$ to time instant $N$ is defined by
+The MPC controller tries to minimized the following \emph{objective function} 
 \begin{equation}
 J_{0\rightarrow N}(\bm{x}_0,U_{0\rightarrow N})=\sum_{k=0}^{N-1}h(\bm{x}_k,\bm{u}_k) + p(\bm{x}_N)
 \end{equation}
-where $N$ is the time horizon and $\bm{x}_k$ is the state vector at time $k$ obtained by the state equations. The terms $h(\bm{x}_k,\bm{u}_k)$ and $p(\bm{x}_N)$ are referred to as \emph{stage cost} and \emph{terminal cost}, respectively. 
+where $N$ is the time horizon. The terms $h(\bm{x}_k,\bm{u}_k)$ and $p(\bm{x}_N)$ are referred to as \emph{stage cost} and \emph{terminal cost}, respectively. 
+{\bfseries{If you wanna be formal look Borrelli's book or the paper about LMPC, you need to define the optimal trajectory at time $t$ and then that you apply just the first input of that trajectory.}} {\bfseries{Also, the equations should be centered}}
 Then, at each time step $t$, the objective function is minimized and its first optimal input $\bm{u}_0$ is applied to the system. This results in a Constrained Finite Time Optimal Control (CFTOC) problem:
 \begin{equation}\label{eq:generalMPC}
 J_{0\rightarrow N}^*(\bm{x}_0,U_{0\rightarrow N})=\min_{U_{0\rightarrow N}}\left[\sum_{k=0}^{N-1}h(\bm{x}_k,\bm{u}_k) + p(\bm{x}_N)\right]
@@ -27,8 +27,8 @@ There are different approaches on how this optimization problem is solved, two c
 Solving eq. \ref{eq:generalMPC} and applying the first optimal input at every time step results in a \emph{Receding horizon controller (RHC)}.
 
 \section{Learning Model Predictive Control}\label{sec:LMPC}
-Learning Model Predictive Control (LMPC) is a novel control theory that allows to find an optimal trajectory in an iterative task by learning from previous iterations. It is based on the concept of Iterative Learning Control (ILC). ILC is a control strategy that minimizes the tracking error of an iterative process by improving its trajectory with every iteration, learning from previous trajectories. It is limited to fixed time processes with given tracking references. \cite{Lee2007} gives an overview on existing methods on ILC.\\
-LMPC extends the framework of ILC by adding an optimization function which allows finding an optimal trajectory of optimal duration. Applying this strategy makes it possible to gradually find an optimal trajectory for complex nonlinear systems under only low computational cost.\\
+Learning Model Predictive Control (LMPC) is a novel control theory that allows to find an optimal trajectory in an iterative task by learning from previous iterations. It is based on the concept of Iterative Learning Control (ILC). ILC is a control strategy {\bfseries{there are many different ILCs}} that minimizes the tracking error of an iterative process by improving its trajectory with every iteration, learning from previous trajectories. It is limited to fixed time processes with given tracking references. \cite{Lee2007} gives an overview on existing methods on ILC.\\
+LMPC extends the framework of ILC by adding an optimization function which allows finding an optimal trajectory of optimal duration. Applying this strategy makes it possible to gradually find an optimal trajectory for complex nonlinear systems under only low computational cost {\bfseries{Again, this under low computational cost is a strong statement, in theory you should solve a Mixed Integer Programming Problem (The relaxation is coming but it is not there yet)}}.{\bfseries{In general if you expect people  to be tough on you then you must be able to motivate every single work that you say/write}}\\
 \emph{Definition of iterative processes}\\
 There are two types of iterative processes that have to be distinguished: \emph{Batch processes} and \emph{Continuous repetitive processes} \cite{Wang2009}. Batch processes are intermittently run and are usually modeled starting from the same initial state. As opposed to that, continuous repetitive processes transition directly from one iteration to the next one, meaning that the last state of an iteration matches the initial state of the next iteration.
 \paragraph{Theory of LMPC}
@@ -76,7 +76,7 @@ J_{t\rightarrow t+N}^{\scalebox{0.4}{LMPC},j}(\bm{x}_t^j)&=\min_{\bm{u}_{t|t},..
 \bm{x}_{t+N|t}&\in\mathcal{SS}^{j-1}.
 \end{align}\label{eq:generalLMPC}
 \end{subequations}
-It can be shown that this control strategy is recursively feasible and asymptotically stable. Additionally, the iteration cost $J^j$ does not increase with the iteration index $j$ and the trajectory converges to a local optimum for $j\rightarrow\infty$.\\
+It can be shown that this control strategy is recursively feasible and {\bfseries{that equuilibrium $x_F$ is asymptotically stable for the closed-loop  system (Equation of system) and (equation of controller)}}. Additionally, the iteration cost $J^j$ does not increase with the iteration index $j$ and the trajectory converges to a local optimum for $j\rightarrow\infty$.\\
 The LMPC strategy presented above applies for batch processes, i.e. the initial state $x_0^j$ has to be the same for each iteration. However, it is not applicable for continuous repetitive systems, for which the final state of an iteration corresponds to the initial state of the next iteration. The next section shows the extension for the repetitive case.
 
 \section{Repetitive Learning Model Predictive Control}

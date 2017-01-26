@@ -132,8 +132,12 @@ Last but not least I would like to thank all my friends who I met during my cour
  
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-A Learning Model Predictive Control strategy is extended to repetitive systems. The presented controller is able to improve its performance with every iteration by learning from previous iterations. It is applied to an autonomous race driving problem. Simulations on a kinematic and a dynamic bicycle model show the controller's performance. Additionally, the strategy is applied to a 1:10 scale RC car. An estimator using an indoor ultrasound based GPS as well as an IMU and wheel encoders is developed. The system's dynamics are identified online using Linear Regression.
-Experiments are performed on a small race track, reaching maximum velocities of $\SI{3}{\meter\per\second}$.
+A Learning Model Predictive Control strategy is extended to repetitive {\bfseries{Need to check the definition of repetitive MPC and periodic MPC. We need to align with what the community is using}} systems. The presented controller is able to improve its performance with every iteration by learning from previous iterations. It is applied to an autonomous race driving problem. Simulations on a kinematic and a dynamic bicycle model show the controller's performance. Additionally, the strategy is applied to a 1:10 scale RC car. An estimator using an indoor ultrasound based GPS as well as an IMU and wheel encoders is developed. The system's dynamics are identified online using Linear Regression.
+Experiments are performed on a small race track, reaching maximum velocities of $\SI{3}{\meter\per\second}$. \\
+
+{\bfseries{OK that is what I would write.}}\\
+
+A Learning Model Predictive Control (LMPC) for {\bfseries{repetitive/periodic}} tasks is presented. The proposed LMPC frameworks builds on [cite] and extends its range of applicability to systems subject to period cycles. The proposed controller learns from data to improve the performance of the closed-loop system at each task execution. A terminal cost and a sampled safe set that take into account the period of the system are used to guarantee recursive feasibility and non-decreasing performance cost at each iterations. The proposed control logic is tested on an autonomous racing example, where the vehicle dynamics are identified online. Simulation results illustrate the effectiveness of the proposed approach. These are bolstered by experimental results on a 1:10 scale RC car. Experimental results where possible thanks to an estimation techniques proposed in this work, where indoor ultrasound based GPS, IMU and wheel encoders measurements are combined to estimate the system state.
 %\begin{itemize}
 %\item Repetitive systems
 %\item Learning model predictive control, extension to repetitive systems
