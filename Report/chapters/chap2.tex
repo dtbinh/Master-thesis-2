@@ -50,7 +50,7 @@ LMPC constructs a sampled safe set of feasible trajectories which is used as a t
 \begin{equation}
 \mathcal{SS}^j = \left\{ \bigcup_{i\in M^j} \bigcup_{t=0}^\infty \bm{x}_t^i\right\}
 \end{equation}
-with
+where $M^j$ is the set of indexes $k$ associated with successful iterations $k$ for $k \leq j$, defined as
 \begin{equation}
 M^j=\left\{ k\in [0,j]: \lim_{t\rightarrow\infty}\bm{x}_t^k=\bm{x}_F\right\}.
 \end{equation}
@@ -81,7 +81,10 @@ The LMPC strategy presented above applies for batch processes, i.e. the initial 
 
 \section{Repetitive Learning Model Predictive Control}
 This section presents a learning control strategy for continuous repetitive systems. We prove ... using the mathematical tools we introduced in section \ref{sec:LMPC}.\\
+
 \paragraph{Not-so-mathematical description of the proving strategy:}
+
+{\bfseries{I don't like the title of this paragraph, the thesis is going to be evaluated by top professor in control, no need to do something for the "big" audience. You should always describe in words you equation, but it is not necessary to have an easy to read section}} \\
 Use two consecutive laps, stacked together, for the safe set and cost function.\\
 Start by constructing a safe set consisting of laps 0 and 1 in which initial and final states are equal (path following). Then start lap 2 and use this safe set and its Q function. At the end of lap 2, the controller can predict beyond the finish line, into the safe set of lap 1. After the finish line has been reached and the laps have been switched (from lap 2 to lap 3), we can use the stacked safe set of laps 0+1 and laps 1+2. However, the initial state is not necessarily the same as before.\\
 This idea of stacking safe sets and Q functions is presented below.
@@ -92,11 +95,16 @@ h(\bm{x}+\bm{p},\bm{u}) &= h(\bm{x},\bm{u}).
 \end{align}
 If the dynamics are periodic in one state, the periodicity is expressed using a standard basis vector $\bm{p}=P\bm{e}_i$, where $P$ is the periodicity in state $i$.\\
 The switching from one iteration to the next one happens when the periodic state reaches $P$, i.e. $\bm{xe}_i^T\geq P$.\\
-Continuous repetitive systems are defined by smooth transitions between two iterations, i.e. the final state of one iteration becomes the initial state of the following iteration. This implicates that, at the end of one iteration, the control needs to take the beginning of the next iteration into account in order to find an optimal input.\\
+{\bfseries{NOTE: In the following you will see what I meant in the previous comment. Basically, first you can give an explanation in words that explains the equation that you wanna to introduce.}}\\
+Continuous repetitive systems are defined by smooth transitions between two iterations. In particular, we have that final state the $j-1$-th iteration becomes the initial state of the $j$-th iteration,
+\begin{equation}
+	\bm{x}_{F}^{j-1} = \bm{x}_{0}^{j}
+\end{equation}
+ This implicates that, at the end of one iteration, the control needs to take the beginning of the next iteration into account in order to find an optimal input.{\bfseries{Yes, but why. I know it and it is easy to understand, but imagine someone that is reading this for the first time and he has seen the LMPC formulation just once in the previous paragraph.}}\\
 We achieve this by creating a safe set that extends beyond the final state of one iteration to the end of the consecutive iteration.
 
 \paragraph{Definitions}
-First, we define the stacked sampled Safe Set $\hat{\mathcal{SS}}^j$ at iteration $j$ that extends beyond the finish line (\emph{note:} it basically just contains stacks of two consecutive trajectories, e.g. laps 0+1, 1+2, 2+3, ...)
+First, we define the stacked {\bfseries{How about periodic sampled Safe Set? It sounds better to me}} sampled Safe Set $\hat{\mathcal{SS}}^j$ at iteration $j$ that extends beyond the finish line (\emph{note:} it basically just contains stacks of two consecutive trajectories, e.g. laps 0+1, 1+2, 2+3, ...)
 \begin{equation}
 \hat{\mathcal{SS}}^j=\left\{\bigcup_{i\in M^j}\left[\left(\bigcup_{t=0}^\infty \bm{x}_t^i\right)\cup\left(\left(\bigcup_{t=0}^\infty \bm{x}_t^{i+1}\right)+\bm{p}\right)\right]\right\}
 \end{equation}
@@ -119,9 +127,9 @@ Note that this definition of the stacked sampled safe set can also be written as
 \end{equation}
 Similarly to the single iteration cost-to-go from eq. \ref{eq:LMPC_costToGo}, we define the \emph{stacked cost-to-go} $\hat{J}_{t\rightarrow\infty}^j(\bm{x}_t^j)$ of iteration $j$ as follows:
 \begin{equation}
-\hat{J}_{t\rightarrow\infty}^j(\bm{x}_t^j)=\begin{dcases}
-J_{t\rightarrow\infty}^j(\bm{x}_t^j)+J^{j+1}&\text{if } \bm{x}<P,\\
-J_{t\rightarrow\infty}^{j+1}(\bm{x}_t^{j+1})&\text{if } \bm{x}\geq P
+\hat{J}_{t\rightarrow\infty}^j(\bm{x})=\begin{dcases}
+J_{t\rightarrow\infty}^j(\bm{x})+J^{j+1}&\text{if } \bm{x}<P,\\
+J_{t\rightarrow\infty}^{j+1}(\bm{x})&\text{if } \bm{x}\geq P
 \end{dcases}
 \end{equation}
 \emph{Note:} the stacked cost-to-go is a piecewise defined function, it is continuous through the lap switching condition (at $P$) and it is zero at $2P$. It is illustrated in fig. \ref{fig:stackedCostToGo}.\\
@@ -195,7 +203,7 @@ and therefore
 J_{0\rightarrow N}^{\scalebox{0.4}{LMPC},j+1}(x_0^{j+1})\geq J_{0\rightarrow N}^{\scalebox{0.4}{LMPC},j}(x_t^j).
 \end{equation}
 This result essentially just shows that the LMPC cost at the initial state of lap $j+1$ is larger or equal to the LMPC cost at the same state, but evaluated in the previous lap $j$.\\
-Question: Can we still assume stability through iterations since the cost function is stable all the way \emph{to} the switching condition and it is stable starting \emph{from} the switching condition?
+Question: Can we still assume stability through iterations since the cost function is stable all the way \emph{to} the switching condition and it is stable starting \emph{from} the switching condition? {\bfseries{Here we have to be a little bit careful about the concept of stability. It is not entirely clear if you want to show that the system always switches to the next iteration of if the terminal invariant set is always stable. Also, it is not clear why you want to show (2.32). Furthermore, you are using quantities defined fro the LMPC for iterative tasks and for the LMPC for periodic/repetitive tasks. This adds lot of notation that seems not necessary, it adds additional difficulties for the reader}}
 \paragraph{Non decreasing iteration cost} Using the strategy above, we will have to focus on the transition between two laps. The "problem" is that - at the beginning of an iteration, right after the transition - the controller doesn't even notice that laps were switched. The safe set is the same and the Q function only increased by a constant value.
 \subsection{Analysis and discussion of the proposed method}
 The previous section extended the LMPC strategy for batch processes by stacking safe sets and iteration cost functions.\\
