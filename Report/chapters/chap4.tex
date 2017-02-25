@@ -1,5 +1,6 @@
 \chapter{Implementation}
-In this chapter the presented control strategy is implemented for a 1:10 scale remote-controlled car. The car is a commercially available hobby race car of the model "Basher RZ-4 1/10 Rally Racer" which has been modified to include sensors and onboard CPUs. First, the system and its available sensors and actuators are introduced. A system identification strategy is presented which allows online estimation of system dynamics. Next, the state estimation and experiments are shown.\\
+In this chapter the presented control strategy is implemented for a 1:10 scale remote-controlled car. The car is a commercially available hobby race car of the model "Basher RZ-4 1/10 Rally Racer" which has been modified to include sensors and onboard CPUs. First, the system and its available sensors and actuators are introduced. Afterwards, a system identification strategy which allows online estimation of system dynamics is presented. Finally, the state estimation and experiments are shown.\\
+{\bfseries{Reformulate, here just give the reader an idea of you wanna cover. The figure is too detailed for an intro.}}
 Figure \ref{fig:controlStructure} shows a simplified control block diagram. After an introduction of the system, this chapter goes through the blocks of system identification, state estimation, and control.
 \begin{figure}[ht]
     \centering
@@ -17,9 +18,9 @@ The car used for our experiments is a remote controlled race car that has been m
     \label{fig:BARC}
 \end{figure}
 
-Aside from standard actuators (brushless DC motor and steering servo), it features two onboard CPUs. The first CPU is an Arduino Nano which allows low-level control of the actuators as well as receiving and simple processing of sensor data. The second CPU is a Samsung Exynos 5422, provided by an Odroid XU4 single board computer. The Exynos CPU family has been used since 2010 on various smartphones like the Samsung Galaxy S. This processor is used for high-level computing (like communication with USB devices and external computers).
+Aside from standard actuators (brushless DC motor and steering servo), it features two onboard CPUs. The first CPU is an Arduino Nano which allows low-level control of the actuators as well as receiving and simple processing of sensor data. The second CPU is a Samsung Exynos 5422, provided by an Odroid XU4 single board computer. The Exynos CPU family has been used since 2010 on various smartphones like the Samsung Galaxy S. This processor is used for high-level computing (i.e. communication with USB devices and external computers).
 \subsection{Sensors}
-For the purpose of race driving the estimation of absolute position, velocity and orientation are needed. The main idea in the selection of sensors was to provide a low cost solution that is not bound to a specific testing area. This is why following sensors were chosen:
+For the purpose of race driving the estimation of absolute position, velocity and orientation are needed. The goal of the BARC project is to provide an affordable solution that can be used for testing autonomous driving algorithms. To accomplish this goal the following low cost  sensors were chosen:
 \begin{description}
 \item[IMU] The Inertial Measurement Unit measures linear and angular accelerations as well as the car's current orientation in space. The IMU used on the BARC is a myAHRS+ which runs at a frequency of 50 Hertz. It is directly connected to the Odroid through a USB port.
 \item[Encoders] Each wheel contains two magnetically operating encoders which can be used to measure the car's velocity. These measurements are only reliable as long as the car is not drifting and as long as the wheels are spinning. The frequency of these measurements is directly related to the rotating speed of the wheels. The encoders are connected to the arduino and send a signal at each half spin of the wheel. The arduino sends the average speed resulting form the signals to the odroid.
@@ -29,8 +30,8 @@ The system measures the position with deviations of about $\SI{2}{\centi\meter}$
 \end{description}
 
 \subsection{Input mapping}\label{sec:inputMapping}
-While the MPC formulation calculates inputs of acceleration and steering in SI units, the actuators are controlled by the Arduino using pulse-width-modulation (PWM) signals. This section first describes the procedure to find the steering mapping followed by the acceleration mapping.
-\paragraph{Steering mapping} To identify the steering mapping, different steering PWM signals are sent to the steering servo while driving at a constant acceleration signal. Due to electromagnetic motor drag, this leads to a constant velocity while performing circles of different radii. A low velocity is used so that an ideal kinematic bicycle model can be assumed. Using the equations of the kinematic bicycle model, the steering angle $\delta_F$ can be inferred:
+While the MPC formulation calculates inputs of acceleration and steering in SI units, the actuators are controlled by the Arduino using pulse-width-modulation (PWM) signals. This section first describes the procedure to find the steering mapping followed by the acceleration mapping. {\bfseries{I noticed that sometime the sentences are a bit convolute, it is good practice to make them as simple and short as possible (I sill have lot of problems in doing that). For instance I would reformulate your last sentence: "This section describes the identification champaign to find the steering and acceleration mapping."}}
+\paragraph{Steering mapping} {\bfseries{Is the the official template for the MS or you made it? I would ask the professor that is going to read the thesis if there is a standard latex template}}To identify the steering mapping, different steering PWM signals are sent to the steering servo while driving at a constant acceleration signal. Due to electromagnetic motor drag, this leads to a constant velocity while performing circles of different radii. A low velocity is used so that an ideal kinematic bicycle model can be assumed. Using the equations of the kinematic bicycle model, the steering angle $\delta_F$ can be inferred:
 \begin{equation}\label{eq:deltaF}
 \delta_F = \arctan\left(\frac{\dot\psi\cdot(L_F+L_R)}{v_x}\right)
 \end{equation}
@@ -57,7 +58,7 @@ Open loop experiments with fast changing steering inputs showed that the servo e
     \caption{Steering delay}
     \label{fig:d_f_delay}
 \end{figure}
-Since the LMPC formulation uses a sample time of $dt=\SI{0.1}{\second}$, we model this delay as a 2-step delay:
+Since the LMPC formulation uses a sample time of $dt=\SI{0.1}{\second}$, we model this delay as a 2-step delay {\bfseries{For the delay use an augmented system, it is ok to implement as you did in the Julia code, but it is much easier for the reader if you write the standard formulation of delay}}:
 \begin{equation}
 x_{k+1}=f(x_k,a_k,\delta_{F,k-2}).
 \end{equation}
@@ -78,6 +79,8 @@ To identify the coefficients of these two regimes, two groups of open loop tests
 
 The resulting correlations can be approximated by two affine functions, where one describes the positive and the other one describes the negative acceleration region.
 
+
+{\bfseries{Question: Do you have these maps is the low level controller? Don't you have that saturation for the acceleration?}}
 We received following results for the coefficients:
 \begin{table}[h!]
 \centering
@@ -107,7 +110,7 @@ Both the linear function and the measured accelerations are illustrated in fig. 
 %plot acceleration/deceleration inputs and velocities. Plot correlations.
 
 \section{System Identification}
-In order to provide an accurate model to the MPC, the system's dynamics are identified at each time step. The dynamic bicycle model from eq. \ref{eq:dynModel} is used to derive a Linear Regression model that uses functions of the system's states as features. State estimates from previous laps are then used to calculate current parameters $\theta_{i,j}$.
+In order to provide an accurate model to the MPC, the system's dynamics are identified at each time step. The dynamic bicycle model from eq. (\ref{eq:dynModel}) {\bfseries{when refer to eq put parenthesis around it}} is used to derive a Linear Regression model that uses functions of the system's states as features. State estimates from previous laps are then used to calculate current parameters $\theta_{i,j}$.
 
 Linear Regression model of the dynamic bicycle model:
 \begin{align}
@@ -164,7 +167,7 @@ Various different techniques have been tried in the course of this thesis and fo
 This filtering approach is based on the assumption that only the kinematic bicycle model is able to estimate the current heading angle $\hat\psi$ using measurements of coordinates and velocity, while the kinematic model would not be able to account for the drift in the $\psi$ measurement. This is why the kinematic bicycle model is used to calculate the heading angle as well as the inertial coordinates. On the other hand, the kinematic model is well suited to combine measurements of accelerations, velocities, and position, which is why we use this model for the estimation of the yaw rate and velocities.
 
 \subsection{Extended Kalman Filter}
-Kalman filters provide a general tool to calculate a state estimate using noisy and/or biased sensor measurements. The standard Kalman filter uses a linear model of the system in order to calculate the most probable state from a set of different state measurements.\\
+Kalman filters provide a general tool to calculate a state estimate using noisy and/or biased sensor measurements {\bfseries{assuming a gaussian model for the noise}}. The standard Kalman filter uses a linear model of the system in order to calculate the most probable state from a set of different state measurements.\\
 Following general procedure has been taken from \cite{Bar-Shalom}.
 The extended Kalman filter is based on the same principles as the standard Kalman filter but it allows to use a nonlinear model by linearizing the model at each time step.\\
 The state estimation always consists of two steps: The \emph{Prediction step} and the \emph{Update step}. The first step calculates a prediction of the next state $\hat{\bm{x}}_{k|k-1}$ based on the previous state estimate $\hat{\bm{x}}_{k-1|k-1}$ and the control input $\bm{u}_{k-1}$. The update step corrects this prediction with the new measurement $\bm{z}_k$. The final state estimate is calculated using the Kalman gain $\bm{K}_k$. Both the model and measurement equations are linearized in each step.\\
@@ -221,7 +224,7 @@ h(\hat{\bm{x}}_{k|k-1}) = \begin{pmatrix}
 \hat v
 \end{pmatrix}
 \end{equation} 
-The second filter features a pure kinematic motion model from \cite{Caron2006} which integrates accelerations to find velocities and positions. Eq. \ref{eq:dynKalman} shows its model equations:
+The second filter features a pure kinematic motion model from \cite{Caron2006} which integrates accelerations to find velocities and positions {\bfseries{Why do you use position from the other model and not from this one, as shown in Figure 4.6}}. Eq. \ref{eq:dynKalman} shows its model equations:
 \begin{align}
 \begin{split}\label{eq:dynKalman}
     \dot x &= \cos(\psi) v_x - \sin(\psi) v_y\\
@@ -345,7 +348,7 @@ Below are described all steps that are performed during one time step (asynchron
 \end{enumerate}
 \end{enumerate}
 \section{Experiments}
-The experiments were performed in a closed space at UC Berkeley. The available area had a size of about 5 by 8 meters and provided enough space for a simple race track.\\
+{\bfseries{Made a new Chapter for experimental results}} The experiments were performed in a closed space at UC Berkeley. The available area had a size of about 5 by 8 meters and provided enough space for a simple race track.\\
 We chose a race track that fits the available area while still providing turns in different directions with the maximum possible curvature of $\SI{1.24}{\per\meter}$. The curvature is shown in fig. \ref{fig:exp_curv}. The track length is $\SI{19}{\meter}$.
 We used a constant sample size for the system identification of 120 points per lap which corresponds to $\SI{2.4}{\second}$ since the state estimation runs at $\SI{50}{\hertz}$. We also used an LMPC horizon length of $N=12$ which corresponds to a prediction time of $\SI{1.2}{\second}$. This horizon is a trade-off between fast learning and fast solver times.
 \begin{figure}[ht]
@@ -358,10 +361,11 @@ We used a constant sample size for the system identification of 120 points per l
 \paragraph{Results and discussion}
 After driving 3 laps using a path following MPC with a kinematic bicycle model at $v_{Ref}=\SI{1.0}{\meter\per\second}$, the LMPC strategy starts in the 4\textsuperscript{th} lap. The reference speed yields a path following lap time of about $t_{pf}=\SI{21}{\second}$. We can see in fig. \ref{fig:exp_lapTime} that the lap time decreases rapidly within the first few learning iterations before it converges to a trajectory that takes about $t_{22}=\SI{7.5}{\second}$ at an average speed of $\SI{2.5}{\meter\per\second}$.\\
 Figures \ref{fig:exp_v} and \ref{fig:exp_e_Y} illustrate the converging behavior of velocities and lateral deviation. Even though especially lateral velocity measurements are very noisy, the combination of system identification and LMPC manages to converge to an optimal trajectory.
-Figure \ref{fig:exp_v_over_xy} visualizes the car's velocity at each point of the track during one optimal iteration. \\
+Figure \ref{fig:exp_v_over_xy} visualizes the car's velocity at each point of the track during one optimal iteration. {\bfseries{This figure is pretty cool, make sure to have in your presentation. Also, could you compare it with the optimal trajectory. We can discuss about how to compute this}} \\
 As we can see, the iteration cost in fig. \ref{fig:exp_lapTime} does not continuously decrease but instead it oscillates around a mean value of about $\SI{7.5}{\second}$. This is due to the model mismatch between the MPC formulation and the real car dynamics, which also arises from inaccurate measurements that are used for the system identification. Robust ILMPC and how to handle model mismatch is subject of current research.\\
-We found out that, in order to ensure feasibility and to avoid numerical issues, the coefficients of the soft lane constraints from eq. \ref{eq:softLaneConstraints} had to be chosen in such a way that they can always be violated by a small amount. In contrast, too high values in combination with model mismatch can lead to solver difficulties.
+We found out that, in order to ensure feasibility and to avoid numerical issues, the coefficients of the soft lane constraints from eq. \ref{eq:softLaneConstraints} had to be chosen in such a way that they can always be violated by a small amount. In contrast, too high values in combination with model mismatch can lead to solver difficulties {\bfseries{Just state that in order to be real time feasible the we introduced soft constraint and therefore we tightened the constrained by 5/10cm?}}.
 
+{\bfseries{You never show something about the SS, it your be nice to have the the figure with the a box representing the car and the predicted trajectory that end in SS, I am not sure that you have these data. Or maybe show that you reach convergence, by showing the in x-y plane the trajectories that overlaps. It seems it would be possible to do a deeper analysis of the experimental results, LET DISCUSS ALSO ABOUT THIS}}
 % Plot solver times?
 % Find optimal trajectory for this kind of track and plot it!
 % First order filter for velocity?
