@@ -46,7 +46,8 @@ The control inputs are the longitudinal acceleration $a$ and the steering angle 
 The kinematic bicycle approximates real car dynamics well for low velocities and as long as there is no or only very little tire slip. However, especially for slippery road conditions and higher velocities model mismatch increases to such an extent that it can not be used to reliably predict real car dynamics anymore. This is why the \emph{Dynamic bicycle model} is introduced in the next section.
 
 \subsection{Dynamic bicycle model}
-As opposed to the kinematic bicycle model which is derived geometrically, the dynamic bicycle model is based on forces that occur between the front and rear tires and the road. Its states are the longitudinal and lateral velocity $v_x$ and $v_y$ which are represented in the body fixed frame, and the yaw rate $\dot \psi$. The state dynamics presented in eq. \ref{eq:dynModel} can be derived by applying Newton's second law of motion and have been taken from \cite{Kong2015}. \hl{The model equations have been simplified by considering the steering angle $\delta_F$ only in the lateral dynamics and neglecting the lateral tire force in the longitudinal dynamics. CAN REMOVE THIS SENTENCE} The corresponding model is illustrated in fig. \ref{eq:dynModel}.
+As opposed to the kinematic bicycle model which is derived geometrically, the dynamic bicycle model is based on forces that occur between the front and rear tires and the road. Its states are the longitudinal and lateral velocity $v_x$ and $v_y$ which are represented in the body fixed frame, and the yaw rate $\dot \psi$. The state dynamics presented in eq. \eqref{eq:dynModel} can be derived by applying Newton's second law of motion and have been taken from \cite{Kong2015}. %\hl{The model equations have been simplified by considering the steering angle $\delta_F$ only in the lateral dynamics and neglecting the lateral tire force in the longitudinal dynamics. CAN REMOVE THIS SENTENCE}
+The corresponding model is illustrated in fig. \eqref{eq:dynModel}.
 \begin{align}
 \begin{split}
 \label{eq:dynModel}
@@ -67,7 +68,7 @@ The tire forces $F_F$ and $F_R$ depend on the lateral slipping angle $\alpha_F$ 
 \begin{equation}\label{eq:pacejka}
 f_P(\alpha) = D\cdot\sin(C\cdot\arctan(B\cdot\alpha))
 \end{equation}
-Note: Eq. \ref{eq:pacejka} is a simplified version of the more general Pacejka function.\\
+Note: Eq. \eqref{eq:pacejka} is a simplified version of the more general Pacejka function.\\
 The Pacejka function is illustrated in fig. \ref{fig:Pacejka} for two sets of parameters, one for tire forces on a dry road and one for a snowy road. The chosen values are not parameters of a real tire, they are only meant for illustration purposes.
 \begin{table}[h!]
 \centering
@@ -88,7 +89,7 @@ D & Peak factor & 1 & 0.3
 	\caption{Pacejka tire model}
 	\label{fig:Pacejka}
 \end{figure}
-Eq. \ref{eq:dynExtra} show the relations between the pacejka function and the tire forces as well as the calculation of slip angles which can be derived geometrically.
+Eq. \eqref{eq:dynExtra} show the relations between the pacejka function and the tire forces as well as the calculation of slip angles which can be derived geometrically.
 \begin{align}
 \begin{split}\label{eq:dynExtra}
     F_F &= -\frac{1}{2}\cdot m\cdot g\cdot \mu \cdot f_P(\alpha_F)\\
@@ -139,7 +140,7 @@ with
 \begin{equation}
 \frac{ds}{dt} = \frac{v_x\cos(e_\psi)-v_y\sin(e_\psi)}{1-e_Y\cdot c(s)}
 \end{equation}
-We are going to use the model of eq. \ref{eq:kinTrackModel} and eq. \ref{eq:dynTrackModel} for all further simulations in combination with a given racetrack, i.e. a given curvature function $c(s)$.
+We are going to use the model of eq. \eqref{eq:kinTrackModel} and eq. \eqref{eq:dynTrackModel} for all further simulations in combination with a given racetrack, i.e. a given curvature function $c(s)$.
 \section{LMPC formulation}
 This section presents the LMPC formulation of the race driving problem. In general, race driving is a minimum time problem: The variable that is to be optimized is the time the car takes to drive from the start to the finish line.\\
 We use the dynamic bicycle model with following states and inputs
@@ -151,7 +152,7 @@ v_{x,t}^j & v_{y,t}^j & \dot \psi_t^j & e_{\psi,t}^j & e_{y,t}^j & s_t^j
 a_t^j & \delta_t^j
 \end{pmatrix}.
 \end{align}
-and equation \ref{eq:generalLMPC} as the optimization function.
+and equation \eqref{eq:generalLMPC} as the optimization function.
 % Are there other ways on how to formulate this problem?
 The racing problem is formulated by using a constant cost function on whenever the car is located between the start and finish line and zero cost when the car has crossed the finish line \cite{Rosolia2016}. Thus the stage cost is defined as follows:
 \begin{equation}
@@ -173,7 +174,7 @@ with lane width $w_{Lane}$.
 
 \section{Approximation of the safe set and LP relaxation}
 % Note: This has to be adapted according to the 'new' LMPC strategy, stacking two iterations together.
-The LMPC problem from \ref{eq:generalRLMPC} minimizes its objective function over the safe set which is a set of discrete states of previous iterations. Therefore, this formulation is a Mixed Integer Nonlinear Programming (MINLP) problem. Since this type of problem is generally computationally challenging, we introduce the concept of safe set relaxation to transform the MINLP to a continuous problem.\\
+The LMPC problem from \eqref{eq:generalLMPC} minimizes its objective function over the safe set which is a set of discrete states of previous iterations. Therefore, this formulation is a Mixed Integer Nonlinear Programming (MINLP) problem. Since this type of problem is generally computationally challenging, we introduce the concept of safe set relaxation to transform the MINLP to a continuous problem.\\
 For this purpose, we approximate the safe set and its cost function using a convex combination of two polynomials as in \cite{RosoliaRacing}. We define the time varying approximated safe set $\tilde{\mathcal{SS}}_t^{j,j-1}$ and the time varying approximated terminal cost function $\tilde{Q}_t^{j,j-1}(\cdot)$.
 \begin{equation}
 \tilde{\mathcal{SS}}_t^{j,j-1} = \left\{\bm{x}\in\mathbb{R}^5,\lambda\in[0,1]: x\in\lambda \tilde{\bm{x}}_t^{j,j-1}+(1-\lambda)\tilde{\bm{x}}_t^{j,j-2}\right\}
@@ -201,7 +202,7 @@ We define the continuous time varying approximation of $Q^{j-1}(\cdot)$:
 +\infty,&\text{if }(\bm{x},\lambda)\not\in\tilde{\mathcal{SS}}_t^{j,j-1}
 \end{cases}
 \end{equation}
-Having defined the relaxation of the safe set and approximation of the terminal cost function we can rewrite the LMPC formulation from eq. \ref{eq:generalLMPC}:
+Having defined the relaxation of the safe set and approximation of the terminal cost function we can rewrite the LMPC formulation from eq. \eqref{eq:generalLMPC}:
 \begin{subequations}
 \begin{align}
 \tilde{J}_{t\rightarrow t+N}^{\scalebox{0.4}{LMPC},j}(\bm{x}_t^j)&=\min_{\lambda,\bm{u}_{t|t},...,\bm{u}_{t+N-1|t}}\left[\sum_{k=t}^{t+N-1}h(\bm{x}_{k|t},u_{k|t})+\tilde{Q}^{j,j-1}(\bm{x}_{t+N|t},\lambda)\right]\\
@@ -214,7 +215,7 @@ Having defined the relaxation of the safe set and approximation of the terminal 
 \end{subequations}
 In practice, the polynomial degree as well as the number of points that are used for the approximation are design parameters. The polynomial degree has to be chosen large enough to approximate the trajectory in the chosen area well enough. However, a high degree polynomial function can lead to numerical difficulties for the solver due to large derivative values and multiple local minima. Similarly, the number of points has to be chosen in such a way that the predicted terminal state $x_N$ lies inside the approximated area. This is why this method works especially well if the approximated region is not too large (i.e. if the horizon $N$ is not too long) and if the trajectories can be well approximated by polynomials of the chosen degree.\\
 For simulations and experiments in this thesis, a polynomial degree of $n=4...6$ proved to work well.\\
-In the case of no model mismatch it would be sufficient to use only the previous iteration in the safe set. \hl{Is this true? Normally, we would have to consider *all* previous trajectories YES.}
+In the case of no model mismatch it would be sufficient to use only the previous iteration in the safe set.
 However, since we expect some model mismatch in experiments, we always select the previous iteration as well as a second iteration with lowest iteration cost for the relaxation of the safe set and the approximation and the Q function.\\
 In general, this approach could be extended to using more than two trajectories in the safe set. However, this would require more than one coefficient $\lambda$ and make the optimization problem more complex.
 %\begin{itemize}
@@ -260,7 +261,7 @@ The curvature $c(s)$ is given and constructed in such a way that the track is cl
 \begin{equation}\label{eq:softLaneConstraints}
 J_{Lane} = \sum_{i=1}^N [c_1\epsilon_i^2 + c_2\epsilon_i], \epsilon_i = |e_{Y,i}|-\frac{w_{Lane}}{2}
 \end{equation}
-with lane width $w_{Lane}=\SI{0.8}{\meter}$. This is done so that the solver is able to solve the LMPC problem even if model mismatch leads to the car leaving the track boundaries. {\bfseries{The main reason why we want to use the formulation is for real-time issues, unfortunately solving a nonlinear problem with hard constraint on the state is very challenging...Probably, it would be necessary to have a soft constraint (or tighten them) also for the model mismatch but it is not the primary reason}}
+with lane width $w_{Lane}=\SI{0.8}{\meter}$. This is done so that the solver is able to solve the LMPC problem even if model mismatch leads to the car leaving the track boundaries. At the same time it facilitates the solving process even when the trajectory is within the track boundaries and thus allows real time feasibility. %{\bfseries{The main reason why we want to use the formulation is for real-time issues, unfortunately solving a nonlinear problem with hard constraint on the state is very challenging...Probably, it would be necessary to have a soft constraint (or tighten them) also for the model mismatch but it is not the primary reason}}
 \subsection{Simulation using the kinematic model}
 The kinematic bicycle model is a purely geometrical model which can, theoretically, accelerate infinitely fast and take infinitely small turns. This is why the unconstrained lap time minimization problem eventually would result in a geometrical shortest path problem with infinite velocity.\\
 In order to avoid this issue and to approximate a realistic car, following constraints and costs are added to the standard LMPC formulation:
@@ -276,11 +277,17 @@ J_{deriv} = \sum_{i=1}^{N-1} (\bm{x}_{i+1}-\bm{x}_i)^T \bm{Q}_x (\bm{x}_{i+1}-\b
 \end{equation}
 with diagonal derivative cost coefficients $\bm{Q}_x$ and $\bm{Q}_u$. This penalizes fast changes in control inputs which would physically not be possible.
 \end{description}
-Figures \ref{fig:SimKin_xy} to \ref{fig:SimKin_cost} show the results of the race problem with the kinematic model.\\
-{\bfseries{Are you assuming no model mismatch here? Is the model used in the LMPC the same as the plant model??}}
+Figures \ref{fig:SimKin_xy} to \ref{fig:SimKin_cost} show the results of the race problem with the kinematic model.
+
+Both the simulation and the LMPC formulation use the same kinematic model. Since the track's curvature is a piecewise linear function which is approximated by a polynomial it cannot fit the given curvature exactly throughout the entire track. This leads to slight model mismatches.
+%{\bfseries{Are you assuming no model mismatch here? Is the model used in the LMPC the same as the plant model??}}
 \paragraph{Evaluation of the results}
 The first lap is performed using a pure path following strategy at a constant reference speed of $\SI{1.0}{\meter\per\second}$. This is done to construct a safe set (that extends beyond the end of one lap).\\
-Figure \ref{fig:SimKin_xy} shows a 2D-view of the race track and the comparison of three laps. We can see that the trajectory converges to a shortest path through the given racetrack, but it doesn't completely converge to straight lines between the curves {\bfseries{All the curves? or on the long straight?}}, which would be the global optimum. This is due to the selected horizon length which doesn't allow the MPC to predict a benefit from going along straight instead of curved lines {\bfseries{Very interesting simulation. Have you tried with a longer horizon does it converge? Do you still have that strange Q-function behavior? It seems that it does the correct thing everywhere but not near the switching condition. Have you tried to do a simple square and see if it have the same behavior on the straight of the finish line and the straight where there is not finish line?}}. This behavior of leaving a lane boundary just to come back to it shortly after is even clearer in fig. \ref{fig:SimKin_eY} (at about $s=0$ and $\SI{33}{\meter}$).\\
+Figure \ref{fig:SimKin_xy} shows a 2D-view of the race track and the comparison of three laps. We can see that the trajectory converges to a shortest path through the given racetrack, but it doesn't completely converge to straight lines between the curves,
+%{\bfseries{All the curves? or on the long straight?}}
+which would be the global optimum. This is due to the selected horizon length which doesn't allow the MPC to predict a benefit from going along straight instead of curved lines.
+%{\bfseries{Very interesting simulation. Have you tried with a longer horizon does it converge? Do you still have that strange Q-function behavior? It seems that it does the correct thing everywhere but not near the switching condition. Have you tried to do a simple square and see if it have the same behavior on the straight of the finish line and the straight where there is not finish line? -> Yes, I tried other simulations with symmetric tracks and the behaviour is exactly the same, it is as if it doesn't see the finish line. I'll send you some plots.}}
+This behavior of leaving a lane boundary just to come back to it shortly after is even clearer in fig. \ref{fig:SimKin_eY} (at about $s=0$ and $\SI{33}{\meter}$).\\
 Figure \ref{fig:SimKin_v} shows the velocity during three selected laps. The car reaches its maximum velocity (which is limited by constrained acceleration) in the first LMPC lap and keeps it throughout the entire lap. Figure \ref{fig:SimKin_cost} shows that the trajectory converges to a optimal trajectory within very few iterations.
 %\begin{itemize}
 %\item First 3 laps path following
@@ -297,7 +304,7 @@ Figure \ref{fig:SimKin_v} shows the velocity during three selected laps. The car
 \begin{figure}[ht]
 	\centering
   	\input{../../Figures/Simulation/Kin_xy.pgf}
-	\caption{Simulation kinematic model {\bfseries{REMIND ME TO DISCUSS ABOUT THIS, HOW IS THE STAGE COST DEFINED ARE YOU DOING THE APPROXIMATION WHEN IS ALWAYS 1? THAT MAY BE THE ISSUE}}}
+	\caption{Simulation kinematic model} %{\bfseries{REMIND ME TO DISCUSS ABOUT THIS, HOW IS THE STAGE COST DEFINED ARE YOU DOING THE APPROXIMATION WHEN IS ALWAYS 1? THAT MAY BE THE ISSUE}}}
 	\label{fig:SimKin_xy}
 \end{figure}
 
@@ -322,7 +329,7 @@ Figure \ref{fig:SimKin_v} shows the velocity during three selected laps. The car
 	\label{fig:SimKin_cost}
 \end{figure}
 \subsection{Simulation using the dynamic model}
-Similar to the kinematic model, simulations using the dynamic bicycle model from eq. \ref{eq:dynModel} were performed. The acceleration input was constrained to $-\SI{1.8}{\meter\per\square\second}\leq a \leq \SI{1.8}{\meter\per\square\second}$ in order to prevent too high velocites which can lead to numerical issues at our chosen sampling time of $dt=\SI{0.02}{\second}$. We used the physical parameters of the BARC and a Pacejka model with coefficients $B=5.0, C=2.0, D = 1.0$. Figures \ref{fig:SimDyn_xy} to \ref{fig:SimDyn_v_over_xy} show the simulation results.\\
+Similar to the kinematic model, simulations using the dynamic bicycle model from eq. \eqref{eq:dynModel} were performed. The acceleration input was constrained to $-\SI{1.8}{\meter\per\square\second}\leq a \leq \SI{1.8}{\meter\per\square\second}$ in order to prevent too high velocites which can lead to numerical issues at our chosen sampling time of $dt=\SI{0.02}{\second}$. We used the physical parameters of the BARC and a Pacejka model with coefficients $B=5.0, C=2.0, D = 1.0$. Figures \ref{fig:SimDyn_xy} to \ref{fig:SimDyn_v_over_xy} show the simulation results.\\
 The first two laps are controlled by a path following controller at a reference speed of $\SI{2.0}{\meter\per\second}$. After that, the LMPC strategy is able to reduce the lap time to $\SI{14}{\second}$ at an average speed of $\SI{3.6}{\meter\per\second}$.
 As opposed to the kinematic model, the velocity changes through one iteration as it needs to slow down in sharp curves and accelerate in straight sections.
 Figure \ref{fig:SimDyn_fcircle} illustrates shows a plot of longitudinal and lateral acceleration which is also known as the \emph{friction circle}. It can be seen that the maximum lateral accelerations are about symmetric with maximal values of $\SI{1.3}{\meter\per\square\second}$. Longitudinal accelerations are smaller which results from the constrained acceleration and derivative cost on the acceleration input, simulating low tire forces in longitudinal direction.

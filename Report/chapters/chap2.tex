@@ -6,7 +6,7 @@ Model Predictive Control is a concept that has been developed since the late 197
 %One strong advantage of MPC is its ability to include state and input constraints 
 This section gives a brief overview on the mathematical concepts of MPC \cite{Borrelli2003}.\\
 Given the discrete time system
-\begin{equation}
+\begin{equation}\label{eq:systemDynamics}
 \bm{x}_{t+1}=f(\bm{x}_t,\bm{u}_t),
 \end{equation}
 where $\bm{x}\in \mathbb{R}^n$ and $\bm{u}\in\mathbb{R}^m$ are the system state and input, subject to the constraints
@@ -18,23 +18,36 @@ The MPC controller tries to minimized the following \emph{objective function}
 J_{0\rightarrow N}(\bm{x}_0,U_{0\rightarrow N})=\sum_{k=0}^{N-1}h(\bm{x}_k,\bm{u}_k) + p(\bm{x}_N)
 \end{equation}
 where $N$ is the time horizon. The terms $h(\bm{x}_k,\bm{u}_k)$ and $p(\bm{x}_N)$ are referred to as \emph{stage cost} and \emph{terminal cost}, respectively. 
-{\bfseries{If you wanna be formal look Borrelli's book or the paper about LMPC, you need to define the optimal trajectory at time $t$ and then that you apply just the first input of that trajectory.}} {\bfseries{Also, the equations should be centered}}
+{\bfseries{If you wanna be formal look Borrelli's book or the paper about LMPC, you need to define the optimal trajectory at time $t$ and then that you apply just the first input of that trajectory.}}
 Then, at each time step $t$, the objective function is minimized and its first optimal input $\bm{u}_0$ is applied to the system. This results in a Constrained Finite Time Optimal Control (CFTOC) problem:
 \begin{equation}\label{eq:generalMPC}
 J_{0\rightarrow N}^*(\bm{x}_0,U_{0\rightarrow N})=\min_{U_{0\rightarrow N}}\left[\sum_{k=0}^{N-1}h(\bm{x}_k,\bm{u}_k) + p(\bm{x}_N)\right]
 \end{equation}
 There are different approaches on how this optimization problem is solved, two common ways are the \emph{Batch Approach} and the \emph{Recursive Approach}. In general, the optimization problem is nonconvex.\\
-Solving eq. \ref{eq:generalMPC} and applying the first optimal input at every time step results in a \emph{Receding horizon controller (RHC)}.
+Solving eq. \eqref{eq:generalMPC} and applying the first optimal input at every time step results in a \emph{Receding horizon controller (RHC)}.
 
 \section{Learning Model Predictive Control}\label{sec:LMPC}
-Learning Model Predictive Control (LMPC) is a novel control theory that allows to find an optimal trajectory in an iterative task by learning from previous iterations. It is based on the concept of Iterative Learning Control (ILC). ILC is a control strategy {\bfseries{there are many different ILCs}} that minimizes the tracking error of an iterative process by improving its trajectory with every iteration, learning from previous trajectories. It is limited to fixed time processes with given tracking references. \cite{Lee2007} gives an overview on existing methods on ILC.\\
-LMPC extends the framework of ILC by adding an optimization function which allows finding an optimal trajectory of optimal duration. Applying this strategy makes it possible to gradually find an optimal trajectory for complex nonlinear systems under only low computational cost {\bfseries{Again, this under low computational cost is a strong statement, in theory you should solve a Mixed Integer Programming Problem (The relaxation is coming but it is not there yet)}}.{\bfseries{In general if you expect people  to be tough on you then you must be able to motivate every single work that you say/write}}\\
-\emph{Definition of iterative processes}\\
+Learning Model Predictive Control (LMPC) is a novel control theory that allows to find an optimal trajectory in an iterative task by learning from previous iterations. It is based on the concept of Iterative Learning Control (ILC). In general, ILCs are control strategies 
+%{\bfseries{there are many different ILCs}}
+aiming to minimize the tracking error of an iterative process by improving its trajectory with every iteration, learning from previous trajectories. It is limited to fixed time processes with given tracking references. \cite{Lee2007} gives an overview on existing methods on ILC.\\
+LMPC extends the framework of ILC by adding an optimization function which allows finding an optimal trajectory of optimal duration. Applying this strategy makes it possible to gradually find an optimal trajectory for complex nonlinear systems.
+%{\bfseries{Again, this under low computational cost is a strong statement, in theory you should solve a Mixed Integer Programming Problem (The relaxation is coming but it is not there yet)}}.{\bfseries{In general if you expect people  to be tough on you then you must be able to motivate every single work that you say/write -> Ok, got it!}}\\
+\paragraph{Definition of iterative processes}
 There are two types of iterative processes that have to be distinguished: \emph{Batch processes} and \emph{Continuous repetitive processes} \cite{Wang2009}. Batch processes are intermittently run and are usually modeled starting from the same initial state. As opposed to that, continuous repetitive processes transition directly from one iteration to the next one, meaning that the last state of an iteration matches the initial state of the next iteration.
 \paragraph{Theory of LMPC}
+In general, our control problem consists of an optimization problem which can be written as follows:
+\begin{subequations}\label{eq:generalProblem}
+\begin{align}
+J_{0\rightarrow \infty}^*(\bm{x}_0)&=\min_{\bm{x}_0,\bm{u}_0,\bm{u}_1,\ldots} \sum\limits_{k=0}^{\infty} h(\bm{x}_k,\bm{u}_k)\\
+\textrm{s.t. }
+&\bm{x}_{k+1}=f(\bm{x}_k,\bm{u}_k),~\forall k\geq 0 \\
+&\bm{x}_0 \in \mathcal{L} \\
+&\bm{x}_k \in \mathcal{X},~\bm{u}_k \in \mathcal{U},~\forall k\geq 0
+\end{align}
+\end{subequations}
 Following theory has been adapted from \cite{Rosolia2016}.\\
 First, we define the stage cost of a state $\bm{x}_t^j$ at time $t$ in iteration $j$ as follows:
-\begin{equation}
+\begin{equation}\label{eq:iterationCost}
 h(\bm{x}_F,0)=0\text{ and } h(\bm{x}_t^j,u_t^j)>0\ \forall\ \bm{x}_t^j\in\mathbb{R}^n\setminus \{\bm{x}_F\},\bm{u}_t^j\in\mathbb{R}^m\setminus\{0\}
 \end{equation}
 where $\bm{x}_F$ is the final state with $f(\bm{x}_F,0)=0$.
@@ -55,7 +68,7 @@ where $M^j$ is the set of indexes $k$ associated with successful iterations $k$ 
 M^j=\left\{ k\in [0,j]: \lim_{t\rightarrow\infty}\bm{x}_t^k=\bm{x}_F\right\}.
 \end{equation}
 Additionally, a terminal cost function is defined over the sampled safe set:
-\begin{equation}
+\begin{equation}\label{eq:Qfunction}
 Q^j(\bm{x})=\begin{dcases}
 \min_{(i,t)\in F^j(\bm{x})} J_{t\rightarrow\infty}^i(\bm{x}),&\text{if }\bm{x}\in\mathcal{SS}^j\\
 +\infty,&\text{if } \bm{x}\not\in \mathcal{SS}^j
@@ -69,25 +82,29 @@ Using the terminal constraints and terminal cost we can write the finite time co
 \begin{subequations}
 \begin{align}
 J_{t\rightarrow t+N}^{\scalebox{0.4}{LMPC},j}(\bm{x}_t^j)&=\min_{\bm{u}_{t|t},...,\bm{u}_{t+N-1|t}}\left[\sum_{k=t}^{t+N-1}h(\bm{x}_{k|t},u_{k|t})+Q^{j-1}(\bm{x}_{t+N|t})\right]\\
-\text{s.t.}\\
-\bm{x}_{k+1|t}&=f(\bm{x}_{k|t},\bm{u}_{k|t}),\forall k\in[t,...,t+N],\\
+\text{s.t.}\notag\\
+\bm{x}_{k+1|t}&=f(\bm{x}_{k|t},\bm{u}_{k|t}),\forall k\in[t,...,t+N],\label{eq:LMPCupdate}\\
 \bm{x}_{t|t}&=\bm{x}_t^j,\\
 \bm{x}_{k|t}&\in\mathcal{X},\bm{u}_k\in\mathcal{U},\forall k\in[t,...,t+N],\\
 \bm{x}_{t+N|t}&\in\mathcal{SS}^{j-1}.
 \end{align}\label{eq:generalLMPC}
 \end{subequations}
-It can be shown that this control strategy is recursively feasible and {\bfseries{that equuilibrium $x_F$ is asymptotically stable for the closed-loop  system (Equation of system) and (equation of controller)}}. Additionally, the iteration cost $J^j$ does not increase with the iteration index $j$ and the trajectory converges to a local optimum for $j\rightarrow\infty$.\\
+Let
+\begin{align}
+\bm{u}_{t:t+N|t}^{*,j}&=[u_{t|t}^{*,j},...,u_{t+N-1|t}^{*,j}]\\
+\bm{x}_{t:t+N|t}^{*,j}&=[x_{t|t}^{*,j},...,x_{t+N|t}^{*,j}]
+\end{align}
+be the optimal solution of eq. \ref{eq:generalLMPC} at time $t$ of the $j$-th iteration. Then, at time $t$ of iteration $j$, the first element of $\bm{u}_{t:t+N|t}^{*,j}$ is applied to the system \eqref{eq:systemDynamics}
+\begin{equation}\label{eq:recHorizon}
+u_t^j = j_{t|t}^{*,j}.
+\end{equation}
+This is repeated at time $t+1$, based on the new state $\bm{x}_{t+1|t+1}=\bm{x}_{t+1}^j$, yielding a \emph{moving} or \emph{receding horizon} control strategy.\\
+It can be shown that this control strategy is recursively feasible and that the equilibrium $x_F$ is asymptotically stable for the closed-loop  system \eqref{eq:systemDynamics} and \eqref{eq:generalLMPC}. Additionally, the iteration cost $J^j$ does not increase with the iteration index $j$ and the trajectory converges to a local optimum for $j\rightarrow\infty$.\\
 The LMPC strategy presented above applies for batch processes, i.e. the initial state $x_0^j$ has to be the same for each iteration. However, it is not applicable for continuous repetitive systems, for which the final state of an iteration corresponds to the initial state of the next iteration. The next section shows the extension for the repetitive case.
 
 \section{Repetitive Learning Model Predictive Control}
 This section presents a learning control strategy for continuous repetitive systems. We prove ... using the mathematical tools we introduced in section \ref{sec:LMPC}.\\
 
-\paragraph{Not-so-mathematical description of the proving strategy:}
-
-{\bfseries{I don't like the title of this paragraph, the thesis is going to be evaluated by top professor in control, no need to do something for the "big" audience. You should always describe in words you equation, but it is not necessary to have an easy to read section}} \\
-Use two consecutive laps, stacked together, for the safe set and cost function.\\
-Start by constructing a safe set consisting of laps 0 and 1 in which initial and final states are equal (path following). Then start lap 2 and use this safe set and its Q function. At the end of lap 2, the controller can predict beyond the finish line, into the safe set of lap 1. After the finish line has been reached and the laps have been switched (from lap 2 to lap 3), we can use the stacked safe set of laps 0+1 and laps 1+2. However, the initial state is not necessarily the same as before.\\
-This idea of stacking safe sets and Q functions is presented below.
 \paragraph{Periodicity and switching condition} First, we assume that the state dynamics and stage cost are periodic with periodicity vector $\bm{p}$:
 \begin{align}
 f(\bm{x}_k+\bm{p},\bm{u}_k) &= f(\bm{x}_k,\bm{u}_k)+\bm{p}\\
@@ -95,127 +112,119 @@ h(\bm{x}+\bm{p},\bm{u}) &= h(\bm{x},\bm{u}).
 \end{align}
 If the dynamics are periodic in one state, the periodicity is expressed using a standard basis vector $\bm{p}=P\bm{e}_i$, where $P$ is the periodicity in state $i$.\\
 The switching from one iteration to the next one happens when the periodic state reaches $P$, i.e. $\bm{xe}_i^T\geq P$.\\
-{\bfseries{NOTE: In the following you will see what I meant in the previous comment. Basically, first you can give an explanation in words that explains the equation that you wanna to introduce.}}\\
+%{\bfseries{NOTE: In the following you will see what I meant in the previous comment. Basically, first you can give an explanation in words that explains the equation that you wanna to introduce.}}\\
 Continuous repetitive systems are defined by smooth transitions between two iterations. In particular, we have that final state the $j-1$-th iteration becomes the initial state of the $j$-th iteration,
-\begin{equation}
-	\bm{x}_{F}^{j-1} = \bm{x}_{0}^{j}
-\end{equation}
- This implicates that, at the end of one iteration, the control needs to take the beginning of the next iteration into account in order to find an optimal input.{\bfseries{Yes, but why. I know it and it is easy to understand, but imagine someone that is reading this for the first time and he has seen the LMPC formulation just once in the previous paragraph.}}\\
-We achieve this by creating a safe set that extends beyond the final state of one iteration to the end of the consecutive iteration.
-
-\paragraph{Definitions}
-First, we define the stacked {\bfseries{How about periodic sampled Safe Set? It sounds better to me}} sampled Safe Set $\hat{\mathcal{SS}}^j$ at iteration $j$ that extends beyond the finish line (\emph{note:} it basically just contains stacks of two consecutive trajectories, e.g. laps 0+1, 1+2, 2+3, ...)
-\begin{equation}
-\hat{\mathcal{SS}}^j=\left\{\bigcup_{i\in M^j}\left[\left(\bigcup_{t=0}^\infty \bm{x}_t^i\right)\cup\left(\left(\bigcup_{t=0}^\infty \bm{x}_t^{i+1}\right)+\bm{p}\right)\right]\right\}
+\begin{equation}\label{eq:transCond}
+	\bm{x}_0^{j+1}=\bm{x}_{\bar t_j+1}^j-\bm{p}\ \forall j\geq 0,
 \end{equation}
 with
 \begin{equation}
-M^j=\left\{k\in[0,j]:\lim_{t\rightarrow\infty}\bm{x}_t^{k+1}=\bm{x}_F\right\}
+\bar t_j = \argmin_t\{t+1:\bm{x}_{t+1}^j\in\mathcal X_F\}
 \end{equation}
-We can also write this definition of the stacked sampled safe set as follows:
-\begin{equation}
-\hat{\mathcal{SS}}^j=\left\{\mathcal{SS}^j\cup \left(\mathcal{SS}^{j+1}+\bm{p}\right)\right\}
-\end{equation}
-% Actually, this is slightly different from the definition above since we include SS^0 in this case.
-Note that this definition of the stacked sampled safe set can also be written as a function of x:
-\begin{equation}\label{eq:stSafeSet}
-\bm{x}\in\hat{\mathcal{SS}}^j\rightarrow
-\begin{cases}
-\bm{x}\in\mathcal{SS}^j&\text{if } \bm{x}<P,\\
-\bm{x}\in\mathcal{SS}^{j+1}&\text{if }\bm{x}\geq P
-\end{cases}
-\end{equation}
-Similarly to the single iteration cost-to-go from eq. \ref{eq:LMPC_costToGo}, we define the \emph{stacked cost-to-go} $\hat{J}_{t\rightarrow\infty}^j(\bm{x}_t^j)$ of iteration $j$ as follows:
-\begin{equation}
-\hat{J}_{t\rightarrow\infty}^j(\bm{x})=\begin{dcases}
-J_{t\rightarrow\infty}^j(\bm{x})+J^{j+1}&\text{if } \bm{x}<P,\\
-J_{t\rightarrow\infty}^{j+1}(\bm{x})&\text{if } \bm{x}\geq P
-\end{dcases}
-\end{equation}
-\emph{Note:} the stacked cost-to-go is a piecewise defined function, it is continuous through the lap switching condition (at $P$) and it is zero at $2P$. It is illustrated in fig. \ref{fig:stackedCostToGo}.\\
-\begin{figure}[ht]
-    \centering
-  \includegraphics{../../figures/Illustrator/proof3.pdf}
-    \caption{Stacked cost-to-go $\hat{J}^0$ and $\hat{J}^1$}
-    \label{fig:stackedCostToGo}
-\end{figure}
-This stacking extends the cost-to-go beyond the finish line and allows at the end of one lap to consider the beginning of the next lap (for which the predicted $x_{t+N|t}>P$).\\
-Using this definition of the stacked cost-to-go we define the stacked Q-function:
-\begin{equation}
-\hat{Q}^j(\bm{x})=\begin{dcases}
-\min_{(i,t)\in F^j(\bm{x})} \hat{J}_{t\rightarrow\infty}^i(\bm{x}),&\text{if }x\in\hat{\mathcal{SS}}^j,\\
-+\infty&\text{if }x\not\in\hat{\mathcal{SS}}^j.
-\end{dcases}
-\end{equation}
-We can also write the stacked Q function depending on x:
-\begin{equation}
-\hat{Q}^j(\bm{x})=\begin{dcases}
-\min_{i,t} \left[J_{t\rightarrow\infty}^i(\bm{x})+J^{i+1}\right],&\text{if }\bm{x}<P,i\in[0,j]\\
-\min_{i,t} \left[J_{t\rightarrow\infty}^{i+1}(x)\right],&\text{if }\bm{x}>P,i\in[0,j].\\
-\end{dcases}
-\end{equation}
-With these definitions, we redefine the LMPC function which yields the repetitive LMPC function:
-\begin{subequations}
+being the time of the transition between the $j$-th and $j+1$th iteration.
+Eq. \eqref{eq:transCond} guarantees that the state remains within the bounds of one period and does not accumulate. It also allows us to extend the sampled safe set beyond the limit of the period $\bm{p}$.
+%This implicates that, at the end of one iteration, the control needs to take the beginning of the next iteration into account in order to find an optimal input.{\bfseries{Yes, but why. I know it and it is easy to understand, but imagine someone that is reading this for the first time and he has seen the LMPC formulation just once in the previous paragraph.}}\\
+%We achieve this by creating a safe set that extends beyond the final state of one iteration to the end of the consecutive iteration.
+%\assumption{Assumption}
+\begin{assumption}\label{as:nonempty}
+We assume that $\mathcal{SS}^0$ is a given non-empty set and $\bm{x}^0\in\mathcal{SS}^0$ is feasible and convergent to $\mathcal{X}_F$ with $\bm{x}_0^1=\bm{x}_{\bar t_0}^0-\bm{p}$.
+\end{assumption}
+
+\begin{remark}
+Assumption \ref{as:nonempty} assumes that we can provide a feasible trajectory that reaches the terminal set $\mathcal{X}_F$.
+\end{remark}
+
+\begin{assumption}\label{as:nonincLMPC}
+At time $t=0$ of the $j$-th iteration we assume that $J_{0\rightarrow N}^{\scalebox{0.4}{LMPC}}(\bm{x}_0^j)\leq J_{0\rightarrow N}^{\scalebox{0.4}{LMPC}}(\bm{x}_0^{j-1}),\ \forall j\geq 1$.
+\end{assumption}
+
+\begin{remark}
+Assumption \ref{as:nonincLMPC} implies that the LMPC cost in the initial condition does not increase from iteration to iteration. In general, this can not be assumed for all types of systems and is difficult to verify. However, in our application of autonomous racing we expect the car to cross the finish line at higher velocities in each iteration. This would suggest this assumption to hold, as was also confirmed in experiments.
+\end{remark}
+
+\begin{theorem}
+Consider system \eqref{eq:systemDynamics} controlled by the LMPC \eqref{eq:generalLMPC} and \eqref{eq:recHorizon}. Let $\mathcal{SS}^j$ be the sampled safe set at the $j$-th iteration. Let assumption \ref{as:nonempty} hold, then the LMPC \eqref{eq:generalLMPC} and \eqref{eq:recHorizon} is feasible at $\forall j\geq 1$ and $t\in \mathbb{Z}_{0+}$. Moreover, the closed loop system \eqref{eq:systemDynamics} and \eqref{eq:generalLMPC} converges to the invariant set $\mathcal{X}_F$ at each $j$-th iteration $\forall y\geq 0$.
+\end{theorem}
+\begin{proof}
+% Idea: First check first time step t=0 of first iteration (j=1)
+% Then: prove that t+1 is feasible if t is feasible
+% Then prove that if \bar t^j is feasible then \bar t+1^j is feasible which is equal to t_0 of j+1
+By assumption \ref{as:nonempty} $\mathcal{SS}^0$ is a non-empty set. From eq. \eqref{eq:transCond} follows that $\bm{x}_0^0=\bm{x}_0^j$. Therefore, at time $t=0$ of the first iteration the solution to the LMPC
 \begin{align}
-\hat{J}_{t\rightarrow t+N}^{\scalebox{0.4}{LMPC},j}(\bm{x}_t^j)&=\min_{\bm{u}_{t|t},...,\bm{u}_{t+N-1|t}}\left[\sum_{k=t}^{t+N-1}h(\bm{x}_{k|t},u_{k|t})+\hat{Q}^{j-2}(\bm{x}_{t+N|t})\right]\\
-\text{s.t.}\\
-\bm{x}_{k+1|t}&=f(\bm{x}_{k|t},\bm{u}_{k|t}),\forall k\in[t,...,t+N],\\
-\bm{x}_{t|t}&=\bm{x}_t^j,\\
-\bm{x}_{k|t}&\in\mathcal{X},\bm{u}_k\in\mathcal{U},\forall k\in[t,...,t+N],\\
-\bm{x}_{t+N|t}&\in\hat{\mathcal{SS}}^{j-2}.
-\end{align}\label{eq:generalRLMPC}
-\end{subequations}
-\emph{Note:} Since we use stacks of 2 consecutive laps for the safe set and Q function, we can't use the previous safe set $j-1$ but instead the one even further back, $j-2$. Our stacked safe set $\hat{\mathcal{SS}}^0$ also has to contain two successful laps before the LMPC starts!
-\paragraph{Recursive feasibility}
-Recursive feasibility throughout one iteration is guaranteed as usual. However, we have to prove feasibility even through the switching between two laps.\\
-Consider state $\bm{x}_t^j$ in iteration $j$. Then the terminal constraint enforces $\bm{x}_{t+N|t}^{*,j}\in\hat{\mathcal{SS}}^{j-2}$. Assume that $\bm{x}_t^j$ is the last state of iteration $j$, meaning that $\bm{x}_{t+1|t}^{*,j}\geq P$ and therefore $\bm{x}_{t+N|t}^{*,j}\geq P$.\\
-Using the definition of the stacked safe set in eq. \ref{eq:stSafeSet} leads to $\bm{x}_{t+N|t}^{*,j}\in\mathcal{SS}^{j-1}$.\\
-As before, the state update and prediction are assumed identical, leading to
-\begin{equation}
-\bm{x}_{t+1|t}^{*,j}=\bm{x}_{t+1}^j=\bm{x}_{0}^{j+1}
-\end{equation}
-% note, actually, we're ignoring the periodicity vector p here! How can this be handled best, mathematically?
-In iteration $j+1$ we use the the stacked safe set $\hat{\mathcal{SS}}^{j-1}$ with $\bm{x}<P$, leading to $\bm{x}\in\mathcal{SS}^{j-1}$. This means that the state trajectory
-\begin{align}
-\begin{pmatrix}
-x_{t+1|t}^{*,j}, & x_{t+2|t}^{*,j}, &...,&x_{t+N-1|t}^{*,j}, &x_{t^*|t}^{i^*}, &x_{t^*+1|t}^{i^*}
-\end{pmatrix}
-=\\
-\begin{pmatrix}
-x_{0|t}^{*,j+1}, & x_{1|t}^{*,j+1}, &...,&x_{N-2|t}^{*,j+1}, &x_{t^*|t}^{i^*}, &x_{t^*+1|t}^{i^*}
-\end{pmatrix}
+[x_0^0,...,x_N^0]\in\mathcal{SS}^{j-1}=\mathcal{SS}^0\\
+[u_0^0,...,u_{N-1}^0]
 \end{align}
-is still feasible in iteration $j+1$.
-\paragraph{Asymptotic stability}
-The proof for asymptotic stability within an iteration works as in the standard LMPC case.
-As usual, we can show that $J_{0\rightarrow N}^{\scalebox{0.4}{LMPC},j}(x_t^j)$ is a decreasing Lyapunov function in lap $j$ and we can show that $J_{0\rightarrow N}^{\scalebox{0.4}{LMPC},j+1}(x_t^j)$ is a decreasing Lyapunov function in lap $j+1$.
-However, we are interested in the stability when the lap switching happens. Looking at the LMPC cost at the state at the switching condition shows an incontinuity.\\
-Consider state $\bm{x}_t^j=\bm{x}_0^{j+1}$ as the last state of iteration $j$ and the first state of iteration $j+1$. 
-\begin{align}
-J_{0\rightarrow N}^{\scalebox{0.4}{LMPC},j}(x_t^j)&=\min_u\left[\sum_{k=0}^{N-1}h(x_{k|t},u_{k|t})+\hat{Q}^{j-2}(x_{N|t})\right] & \text{and } x_{N|t}>P\\
-&=\min_u\left[\sum_{k=0}^{N-1}h(x_{k|t},u_{k|t})+Q^{j-1}(x_{N|t})\right]\\
-&=\min_u\left[\sum_{k=0}^{N-1}h(x_{k|t},u_{k|t})+\min_{i,t} \left[J_{t\rightarrow\infty}^i(x)\right]\right] & \text{and } i\in [0,j-1]\\
-J_{0\rightarrow N}^{\scalebox{0.4}{LMPC},j+1}(x_0^{j+1})&=\min_u\left[\sum_{k=0}^{N-1}h(x_{k|0},u_{k|0})+\hat{Q}^{j-1}(x_{N|0})\right] & \text{and } x_{N|0}<P\\
-&=\min_u\left[\sum_{k=0}^{N-1}h(x_{k|0},u_{k|0})+\min_{i,t} \left[J_{t\rightarrow\infty}^i(x)+J^{i+1}\right]\right] & \text{and } i\in [0,j-1]
-\end{align}
-and therefore
-\begin{equation}
-J_{0\rightarrow N}^{\scalebox{0.4}{LMPC},j+1}(x_0^{j+1})\geq J_{0\rightarrow N}^{\scalebox{0.4}{LMPC},j}(x_t^j).
+satisfies input and state constraints and is a feasible solution to \eqref{eq:generalLMPC}.
+
+Now assume that the LMPC is feasible at time $t$ and let $\bm{x}_{t:t+N|t}^{*,j}$ and $\bm{u}_{t:t+N-1|t}^{*,j}$ be the optimal trajectory and the input sequence. As the state update in \eqref{eq:systemDynamics} and \eqref{eq:LMPCupdate} are assumed to be identical we have $\bm{x}_{t+1}^j=\bm{x}_{t+1|t}^{*,j}$.
+
+At time $t+1$ of the $j$-th iteration the input sequence
+\begin{equation}\label{eq:newInput}
+[u_{t+1|t}^{*,j},u_{t+2|t}^{*,j},...u_{t+N-1|t}^{*,j},u_{t*}^{i*}]
 \end{equation}
-This result essentially just shows that the LMPC cost at the initial state of lap $j+1$ is larger or equal to the LMPC cost at the same state, but evaluated in the previous lap $j$.\\
-Question: Can we still assume stability through iterations since the cost function is stable all the way \emph{to} the switching condition and it is stable starting \emph{from} the switching condition? {\bfseries{Here we have to be a little bit careful about the concept of stability. It is not entirely clear if you want to show that the system always switches to the next iteration of if the terminal invariant set is always stable. Also, it is not clear why you want to show (2.32). Furthermore, you are using quantities defined fro the LMPC for iterative tasks and for the LMPC for periodic/repetitive tasks. This adds lot of notation that seems not necessary, it adds additional difficulties for the reader}}
-\paragraph{Non decreasing iteration cost} Using the strategy above, we will have to focus on the transition between two laps. The "problem" is that - at the beginning of an iteration, right after the transition - the controller doesn't even notice that laps were switched. The safe set is the same and the Q function only increased by a constant value.
+and the related state trajectory
+\begin{equation}\label{eq:newTraj}
+[x_{t+1|t}^{*,j},x_{t+2|t}^{*,j},...x_{t+N-1|t}^{*,j},x_{t*}^{i*},x_{t*+1}^{i*}]
+\end{equation}
+satisfy input and state constraints. Therefore, \eqref{eq:newInput}-\eqref{eq:newTraj} is a feasible solution for the LMPC \eqref{eq:generalLMPC} at time $t+1$.
+
+Now consider the final time step $\bar t_j$ of an iteration $j$. Assume that at time $\bar{t}_j$ of the $j$-th iteration the LMPC is feasible and let
+\begin{align}\label{eq:newSol}
+{\bf{u}}^{*,j}_{\bar{t}_j:\bar{t}_j+N|\bar{t}_j}  &= [u_{\bar{t}_j|\bar{t}_j}^{*,j}, \cdots, u_{\bar{t}_j+N-1|\bar{t}_j}^{*,j}]\\
+{\bf{x}}^{*,j}_{\bar{t}_j:\bar{t}_j+N|\bar{t}_j} &= [x_{\bar{t}_j|\bar{t}_j}^{*,j}, \cdots, x_{\bar{t}_j+N|\bar{t}_j}^{*,j}]
+\end{align}
+be the optimal solution. By definition \eqref{eq:transCond} the system reaches the terminal invariant set at time $\bar t_j+1$ and the following iteration $j+1$ starts. We construct a feasible solution to the LMPC at time $t=0$ in iteration $j+1$ using \eqref{eq:newSol}.
+Due to identical state updates we have
+\begin{equation}
+	\bm{x}^{j+1}_0 = \bm{x}_{\bar{t}_j+1}^j - \bm{p}= \bm{x}^{*,j}_{\bar{t}_j+1|\bar{t}_j} -\bm{p}.
+\end{equation}
+By the definition of $\bar t_j$ we have $\bm{x}_{\bar t_j+N}^{*,j}\in \mathcal{X}_F \subset \mathcal{SS}^{j-1}$ and therefore it exists $k\geq 0$ such that
+\begin{equation}
+\bm{x}_{\bar t_j+N|\bar t_j}^{*,j}=\bm{x}_{t^*}^{i^*} = \bm{x}_{\bar t_j+k+1}^{i^*}
+\end{equation}
+where $(i^*,t^*)$ are the minimizer in \eqref{eq:Qfunction} with $i*<j$.
+
+Moreover, we notice that
+\begin{equation}
+\bm{x}_{\bar{t}_j+N|\bar{t}_j}^{*,j}-\bm{p}=\bm{x}^{i^*}_{k+\bar{t}_j +1 }- \bm{p} = \bm{x}^{i^*+1}_k \in \mathcal{SS}^{i^*+1} \subset \mathcal{SS}^j.
+\end{equation}
+Since $\bm{x}_{k+1}^{i^*+1}\in\mathcal{SS}^j$, the trajectory
+\begin{equation}\label{eq:finalTraj}
+[\bm{x}_{\bar{t}_j+1|\bar{t}_j}^{*,j}- \bm{p}, \cdots, \bm{x}_{\bar{t}_j+N|\bar{t}_j}^{*,j}- \bm{p} = \bm{x}^{i^*+1}_k, \bm{x}^{i^*+1}_{k+1}]
+\end{equation}
+is a feasible trajectory for the LMPC \eqref{eq:generalLMPC}. Therefore, \eqref{eq:finalTraj} and the related input sequence is a feasible solution to the LMPC at time $t$ in iteration $j+1$.
+\end{proof}
+
+\begin{theorem}
+Consider system \eqref{eq:systemDynamics} in closed loop with the LMPC controller \eqref{eq:generalLMPC} and \eqref{eq:recHorizon}. Let $\mathcal{SS}^j$ be the sampled safe set at iteration $j$. Let assumptions \ref{as:nonempty}-\ref{as:nonincLMPC} hold, then the iteration cost $J_{0\rightarrow\infty}^j(\cdot)$ does not increas with iteration index $j$.
+\end{theorem}
+
+\begin{proof}
+First, we find a lower bound on the $j$-th iteration cost $J_{0\rightarrow \infty}^{j}(\cdot), ~\forall ~j>0$. Consider the realized state and input sequence in iteration $j$ which collects the first element of the optimal state and input sequence to the LMPC at time $t$, $~\forall t \in \mathbb{Z}_{0+}$.
+By the definition of the iteration cost in \eqref{eq:iterationCost} and from assumption \ref{as:nonincLMPC}, we have
+\begin{equation}
+\begin{aligned}
+J_{0\rightarrow \infty}^{j-1}(\bm{x}_0) &= \sum\limits_{t=0}^{\infty} h(\bm{x}_t^{j-1},\bm{u}_t^{j-1}) = \\
+&=\sum\limits_{t=0}^{N-1} h(\bm{x}_t^{j-1},\bm{u}_t^{j-1}) + \sum\limits_{t=N}^{\infty} h(\bm{x}_t^{j-1},\bm{u}_t^{j-1}) \geq \\
+&\geq \sum\limits_{t=0}^{N-1} h(\bm{x}_t^{j-1},\bm{u}_t^{j-1}) + Q^{j-1}(\bm{x}_N^{j-1}) \geq \\
+&\geq \min_{\bm{u}_0,\ldots,\bm{u}_{N-1}} \left[ \sum_{k=0}^{N-1}  h(\bm{x}_k,\bm{u}_k) + Q^{j-1}(\bm{x}_N) \right] = \\
+&= J_{0\rightarrow N}^{\scalebox{0.4}{LMPC},j}(\bm{x}_0^{j-1})\geq J_{0\rightarrow N}^{\scalebox{0.4}{LMPC},j}(\bm{x}_0^{j}).
+\end{aligned}
+\end{equation}
+Given the above expression the proof follows from \mbox{\textit{Theorem 2}} in \cite{Rosolia2016}. 
+\end{proof}
+
+\begin{theorem}
+Consider system \eqref{eq:systemDynamics} in closed loop with the LMPC controller.
+	Let $\mathcal{SS}^j$ be the sampled safe set in iteration $j$. Let assumption \ref{as:nonempty} hold and assume that the closed loop system \eqref{eq:systemDynamics} and \eqref{eq:generalLMPC} converges to a steady state trajectory ${\bf{x}}^\infty$, for iteration $j\rightarrow \infty$. Then, the steady state input ${\bf{u}}^\infty = \lim_{j \to \infty} {\bf{u}}^j$ and the related steady state trajectory ${\bf{x}}^\infty = \lim_{j \to \infty} {\bf{x}}^j$ is a local optimal solution for the infinite horizon optimal control problem \eqref{eq:generalProblem}, i.e., ${\bf{x}}^\infty = {\bf{x}}^{*}$ and ${\bf{u}}^\infty = {\bf{u}}^{*}$.
+\end{theorem}
+
+\begin{proof}
+The proof follows as in the LMPC for iterative tasks \cite{Rosolia2016}. 
+\end{proof}
+
 \subsection{Analysis and discussion of the proposed method}
 The previous section extended the LMPC strategy for batch processes by stacking safe sets and iteration cost functions.\\
-Since the LMPC function minimizes over stacks of 2 iterations, it can happen that the single iteration cost decreases 2-stepwise while the overall 2-iteration cost decreases continuously (see fig. \ref{fig:dynDoubleItCost}).
-
-\begin{figure}[ht]
-    \centering
-      \input{../../Figures/Simulation/Dyn_double_it_cost.pgf}
-    \caption{Double iteration cost}
-    \label{fig:dynDoubleItCost}
-\end{figure}
-
 
 % Explain concept of going to 2*P
 % Define J (not to infinity but only to P)
