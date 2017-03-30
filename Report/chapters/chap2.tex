@@ -1,8 +1,8 @@
 \chapter{Repetitive Learning Model Predictive Control}
-This chapter gives a general introduction to the concept of Model Predictive Control (MPC). Based on that, the theory of Learning Model Predictive Control (LMPC) for periodic/repetitive tasks is presented. %Additionally, simulations of LTI systems are performed and analyzed to verify its practicability.
+This chapter gives a general introduction to the concept of Model Predictive Control (MPC). Based on that, the theory of Learning Model Predictive Control (LMPC) for repetitive tasks is presented. %Additionally, simulations of LTI systems are performed and analyzed to verify its practicability.
 
 \section{Model Predictive Control}
-Model Predictive Control is a concept that has been developed since the late 1970s, starting from Chemical Process Industries \cite{garcia1989model}. Since then, increasing computational power which is essential to quickly solving complex optimization problems has helped further research on this method and has extended it to other fields beyond chemical industries.
+Model Predictive Control is a concept that has been developed since the late 1970s, starting from Chemical Process Industries \cite{garcia1989model}. Since then, increasing computational power  has helped further research on this method and has extended it to other fields beyond chemical industries.
 %One strong advantage of MPC is its ability to include state and input constraints 
 This section gives a brief overview on the mathematical concepts of MPC \cite{Borrelli2003}.\\
 Given the discrete time system
@@ -13,18 +13,28 @@ where $\bm{x}\in \mathbb{R}^n$ and $\bm{u}\in\mathbb{R}^m$ are the system state 
 \begin{equation}
 \bm{x}_t\in\mathcal{X},\ \bm{u}_t\in\mathcal{U},\ \forall t\in\mathbb{Z}_{0+}.
 \end{equation}
-The MPC controller tries to minimized the following \emph{objective function} 
+The MPC controller tries to minimize the following \emph{objective function},
 \begin{equation}
-J_{0\rightarrow N}(\bm{x}_0,U_{0\rightarrow N})=\sum_{k=0}^{N-1}h(\bm{x}_k,\bm{u}_k) + p(\bm{x}_N)
+J_{t\rightarrow t+N}(\bm{x}_t,\bm{u}_{t\rightarrow t+N-1})=\sum_{k=t}^{t+N-1}h(\bm{x}_{k|t},\bm{u}_{k|t}) + p(\bm{x}_{t+N|t}),
 \end{equation}
 where $N$ is the time horizon. The terms $h(\bm{x}_k,\bm{u}_k)$ and $p(\bm{x}_N)$ are referred to as \emph{stage cost} and \emph{terminal cost}, respectively. 
-{\bfseries{If you wanna be formal look Borrelli's book or the paper about LMPC, you need to define the optimal trajectory at time $t$ and then that you apply just the first input of that trajectory.}}
-Then, at each time step $t$, the objective function is minimized and its first optimal input $\bm{u}_0$ is applied to the system. This results in a Constrained Finite Time Optimal Control (CFTOC) problem:
-\begin{equation}\label{eq:generalMPC}
-J_{0\rightarrow N}^*(\bm{x}_0,U_{0\rightarrow N})=\min_{U_{0\rightarrow N}}\left[\sum_{k=0}^{N-1}h(\bm{x}_k,\bm{u}_k) + p(\bm{x}_N)\right]
+%{\bfseries{If you wanna be formal look Borrelli's book or the paper about LMPC, you need to define the optimal trajectory at time $t$ and then that you apply just the first input of that trajectory.}}
+Then, at each time step $t$, the objective function is minimized and its first optimal input $\bm{u}_{t|t}^*$ is applied to the system. This results in a Constrained Finite Time Optimal Control (CFTOC) problem:
+\begin{subequations}\label{eq:generalMPC}
+\begin{align}
+J_{t\rightarrow t+N}^*(\bm{x}_t,\bm{u}_{t\rightarrow t+N-1})&=\min_{\bm{u}_{t|t},...,\bm{u}_{t+N-1|t}}\left[\sum_{k=t}^{N-1}h(\bm{x}_{k|t},\bm{u}_{k|t}) + p(\bm{x}_{t+N|t})\right]\\
+\text{s.t.}\notag\\
+\bm{x}_{k+1|t}&=f(\bm{x}_{k|t},\bm{u}_{k|t}),\ \forall k\in [t,...,t+N-1]\\
+\bm{x}_{t|t}&=\bm{x}_t\\
+\bm{x}_{k|t}&\in\mathcal{X},\ \bm{u}_k\in\mathcal{U},\ \forall k\in [t,...,t+N-1]
+\end{align}
+\end{subequations}
+with the optimal solution for the state $\bm{x}_{t|t\rightarrow t+N|t}^*$ and for the input $\bm{u}_{t|t\rightarrow t+N-1|t}^*$. The first optimal input is applied to the system:
+\begin{equation}\label{eq:firstInput}
+\bm{u}_t=\bm{u}_{t|t}^*.
 \end{equation}
-There are different approaches on how this optimization problem is solved, two common ways are the \emph{Batch Approach} and the \emph{Recursive Approach}. In general, the optimization problem is nonconvex.\\
-Solving eq. \eqref{eq:generalMPC} and applying the first optimal input at every time step results in a \emph{Receding horizon controller (RHC)}.
+Solving eq. \eqref{eq:generalMPC} and applying the first optimal input \eqref{eq:firstInput} at every time step results in a \emph{Receding horizon controller (RHC)}.
+There are different approaches on how this optimization problem is solved, two common ways are the \emph{Batch Approach} and the \emph{Recursive Approach}. In general, the optimization problem can nonconvex.\\
 
 \section{Learning Model Predictive Control}\label{sec:LMPC}
 Learning Model Predictive Control (LMPC) is a novel control theory that allows to find an optimal trajectory in an iterative task by learning from previous iterations. It is based on the concept of Iterative Learning Control (ILC). In general, ILCs are control strategies 
@@ -38,17 +48,18 @@ There are two types of iterative processes that have to be distinguished: \emph{
 In general, our control problem consists of an optimization problem which can be written as follows:
 \begin{subequations}\label{eq:generalProblem}
 \begin{align}
-J_{0\rightarrow \infty}^*(\bm{x}_0)&=\min_{\bm{x}_0,\bm{u}_0,\bm{u}_1,\ldots} \sum\limits_{k=0}^{\infty} h(\bm{x}_k,\bm{u}_k)\\
+J_{0\rightarrow \infty}^*(\bm{x}_0)&=\min_{\bm{u}_0,\bm{u}_1,\ldots} \sum\limits_{k=0}^{\infty} h(\bm{x}_k,\bm{u}_k)\\
 \textrm{s.t. }
 &\bm{x}_{k+1}=f(\bm{x}_k,\bm{u}_k),~\forall k\geq 0 \\
-&\bm{x}_0 \in \mathcal{L} \\
+&\bm{x}_0 = \bm{x}_S \\
 &\bm{x}_k \in \mathcal{X},~\bm{u}_k \in \mathcal{U},~\forall k\geq 0
 \end{align}
 \end{subequations}
+with $\bm{x}_S$ being the initial state at each iteration.
 Following theory has been adapted from \cite{Rosolia2016}.\\
 First, we define the stage cost of a state $\bm{x}_t^j$ at time $t$ in iteration $j$ as follows:
 \begin{equation}\label{eq:iterationCost}
-h(\bm{x}_F,0)=0\text{ and } h(\bm{x}_t^j,u_t^j)>0\ \forall\ \bm{x}_t^j\in\mathbb{R}^n\setminus \{\bm{x}_F\},\bm{u}_t^j\in\mathbb{R}^m\setminus\{0\}
+h(\bm{x}_F,0)=0\text{ and } h(\bm{x}_t^j,\bm{u}_t^j)>0\ \forall\ \bm{x}_t^j\in\mathbb{R}^n\setminus \{\bm{x}_F\},\bm{u}_t^j\in\mathbb{R}^m\setminus\{0\}
 \end{equation}
 where $\bm{x}_F$ is the final state with $f(\bm{x}_F,0)=0$.
 Then, the cost of one iteration $j$ is defined as the sum of its stage costs:
@@ -96,23 +107,34 @@ Let
 \end{align}
 be the optimal solution of eq. \ref{eq:generalLMPC} at time $t$ of the $j$-th iteration. Then, at time $t$ of iteration $j$, the first element of $\bm{u}_{t:t+N|t}^{*,j}$ is applied to the system \eqref{eq:systemDynamics}
 \begin{equation}\label{eq:recHorizon}
-u_t^j = j_{t|t}^{*,j}.
+\bm{u}_t^j = \bm{u}_{t|t}^{*,j}.
 \end{equation}
 This is repeated at time $t+1$, based on the new state $\bm{x}_{t+1|t+1}=\bm{x}_{t+1}^j$, yielding a \emph{moving} or \emph{receding horizon} control strategy.\\
 It can be shown that this control strategy is recursively feasible and that the equilibrium $x_F$ is asymptotically stable for the closed-loop  system \eqref{eq:systemDynamics} and \eqref{eq:generalLMPC}. Additionally, the iteration cost $J^j$ does not increase with the iteration index $j$ and the trajectory converges to a local optimum for $j\rightarrow\infty$.\\
 The LMPC strategy presented above applies for batch processes, i.e. the initial state $x_0^j$ has to be the same for each iteration. However, it is not applicable for continuous repetitive systems, for which the final state of an iteration corresponds to the initial state of the next iteration. The next section shows the extension for the repetitive case.
 
 \section{Repetitive Learning Model Predictive Control}
-This section presents a learning control strategy for continuous repetitive systems. We prove ... using the mathematical tools we introduced in section \ref{sec:LMPC}.\\
+This section presents a learning control strategy for continuous repetitive systems. We prove recursive feasibility, non-increasing iteration cost, and optimality, using the mathematical tools we introduced in section \ref{sec:LMPC}.\\
 
 \paragraph{Periodicity and switching condition} First, we assume that the state dynamics and stage cost are periodic with periodicity vector $\bm{p}$:
 \begin{align}
 f(\bm{x}_k+\bm{p},\bm{u}_k) &= f(\bm{x}_k,\bm{u}_k)+\bm{p}\\
 h(\bm{x}+\bm{p},\bm{u}) &= h(\bm{x},\bm{u}).
 \end{align}
-If the dynamics are periodic in one state, the periodicity is expressed using a standard basis vector $\bm{p}=P\bm{e}_i$, where $P$ is the periodicity in state $i$.\\
-The switching from one iteration to the next one happens when the periodic state reaches $P$, i.e. $\bm{xe}_i^T\geq P$.\\
+%If the dynamics are periodic in one state, the periodicity is expressed using a standard basis vector $\bm{p}=P\bm{e}_i$, where $P$ is the periodicity in state $i$.\\
+%The switching from one iteration to the next one happens when the periodic state reaches $P$, i.e. $\bm{xe}_i^T\geq P$.\\
 %{\bfseries{NOTE: In the following you will see what I meant in the previous comment. Basically, first you can give an explanation in words that explains the equation that you wanna to introduce.}}\\
+As for repetitive systems the initial state depends on the final state of the previous iteration, can not be constrained to a single state $x_S$. The problem from eq. \eqref{eq:generalProblem} therefore becomes the following problem:
+\begin{subequations}\label{eq:generalNewProblem}
+\begin{align}
+J_{0\rightarrow \infty}^*(\bm{x}_0)&=\min_{\bm{x}_0,\bm{u}_0,\bm{u}_1,\ldots} \sum\limits_{k=0}^{\infty} h(\bm{x}_k,\bm{u}_k)\\
+\textrm{s.t. }
+&\bm{x}_{k+1}=f(\bm{x}_k,\bm{u}_k),~\forall k\geq 0 \\
+&\bm{x}_0 \in \mathcal{L} \\
+&\bm{x}_k \in \mathcal{X},~\bm{u}_k \in \mathcal{U},~\forall k\geq 0
+\end{align}
+\end{subequations}
+% Clean this section!
 Continuous repetitive systems are defined by smooth transitions between two iterations. In particular, we have that final state the $j-1$-th iteration becomes the initial state of the $j$-th iteration,
 \begin{equation}\label{eq:transCond}
 	\bm{x}_0^{j+1}=\bm{x}_{\bar t_j+1}^j-\bm{p}\ \forall j\geq 0,
@@ -151,8 +173,8 @@ Consider system \eqref{eq:systemDynamics} controlled by the LMPC \eqref{eq:gener
 % Then prove that if \bar t^j is feasible then \bar t+1^j is feasible which is equal to t_0 of j+1
 By assumption \ref{as:nonempty} $\mathcal{SS}^0$ is a non-empty set. From eq. \eqref{eq:transCond} follows that $\bm{x}_0^0=\bm{x}_0^j$. Therefore, at time $t=0$ of the first iteration the solution to the LMPC
 \begin{align}
-[x_0^0,...,x_N^0]\in\mathcal{SS}^{j-1}=\mathcal{SS}^0\\
-[u_0^0,...,u_{N-1}^0]
+&[x_0^0,...,x_N^0]\in\mathcal{SS}^{j-1}=\mathcal{SS}^0\\
+&[u_0^0,...,u_{N-1}^0]
 \end{align}
 satisfies input and state constraints and is a feasible solution to \eqref{eq:generalLMPC}.
 
@@ -196,7 +218,7 @@ is a feasible trajectory for the LMPC \eqref{eq:generalLMPC}. Therefore, \eqref{
 \end{proof}
 
 \begin{theorem}
-Consider system \eqref{eq:systemDynamics} in closed loop with the LMPC controller \eqref{eq:generalLMPC} and \eqref{eq:recHorizon}. Let $\mathcal{SS}^j$ be the sampled safe set at iteration $j$. Let assumptions \ref{as:nonempty}-\ref{as:nonincLMPC} hold, then the iteration cost $J_{0\rightarrow\infty}^j(\cdot)$ does not increas with iteration index $j$.
+Consider system \eqref{eq:systemDynamics} in closed loop with the LMPC controller \eqref{eq:generalLMPC} and \eqref{eq:recHorizon}. Let $\mathcal{SS}^j$ be the sampled safe set at iteration $j$. Let assumptions \ref{as:nonempty}-\ref{as:nonincLMPC} hold, then the iteration cost $J_{0\rightarrow\infty}^j(\cdot)$ does not increase with iteration index $j$.
 \end{theorem}
 
 \begin{proof}
@@ -224,7 +246,7 @@ The proof follows as in the LMPC for iterative tasks \cite{Rosolia2016}.
 \end{proof}
 
 \subsection{Analysis and discussion of the proposed method}
-The previous section extended the LMPC strategy for batch processes by stacking safe sets and iteration cost functions.\\
+The previous section extended the LMPC strategy from \cite{Rosolia2016} for batch processes to repetitive processes. This extension allows smooth transitions between iterations. Additionally, it does not require equal initial states for each iteration. Instead, the initial state of an iteration $j$ matches the final state of the previous iteration $j-1$.\\
 
 % Explain concept of going to 2*P
 % Define J (not to infinity but only to P)

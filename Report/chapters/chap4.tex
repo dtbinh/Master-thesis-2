@@ -18,7 +18,7 @@ The car used for our experiments is a remote controlled race car of the model "B
     \label{fig:BARC}
 \end{figure}
 
-Aside from standard actuators (brushless DC motor and steering servo), it features two onboard CPUs. The first CPU is an Arduino Nano which allows low-level control of the actuators as well as receiving and simple processing of sensor data. The second CPU is a Samsung Exynos 5422, provided by an Odroid XU4 single board computer. The Exynos CPU family has been used since 2010 on various smartphones like the Samsung Galaxy S. This processor is used for high-level computing (i.e. communication with USB devices and external computers).
+Aside from standard actuators (brushless DC motor and steering servo), it features two onboard CPUs. The first CPU is an Arduino Nano which allows low-level control of the actuators as well as receiving and simple processing of sensor data. The second CPU is a Samsung Exynos 5422, provided by an Odroid XU4 single board computer. The Exynos CPU family has been used since 2010 on various smartphones like the Samsung Galaxy S. This processor is used for high-level computing (i.e. communication with USB devices and an external computer).
 \subsection{Sensors}
 For the purpose of race driving the estimation of absolute position, velocity and orientation are needed. The goal of the BARC project is to provide an affordable solution that can be used for testing autonomous driving algorithms. To accomplish this goal the following low cost  sensors were chosen:
 \begin{description}
@@ -216,13 +216,13 @@ The process noise matrix Q was tuned manually in post-processing. The values wer
 \paragraph{Frequency of the filter}
 The extended Kalman filter runs at a frequency of 50 Hertz and assumes that all measurements are received at the same time and with equal frequencies. However, since we are using different sensors at different frequencies, we are using following strategy for each sensor:
 \begin{description}
-\item[IMU] The IMU provides data at the frequency of the Kalman filter itself, $\SI{50}{\hertz}$. This is why we  can use this data directly.
-\item[GPS] The indoor GPS provides measurements at varying frequencies between 10 and 16 Hertz, whereas there are times when no measurement are received for up to one second. In order to account for this uncertainty, we always extrapolate the previously received data by a polynomial to the time of the Kalman filter update. This extrapolation makes sure that even longer measurement breaks don't pose any difficulties to the estimator.
+\item[IMU] The IMU provides data at the frequency of the Kalman filter itself, $\SI{50}{\hertz}$. This is why we can use this data directly.
+\item[GPS] The indoor GPS provides measurements at varying frequencies between 10 and 16 Hertz, whereas there are times when no measurement are received for up to one second. These interruptions might result from hardware issues (e.g. interfering reflections of ultrasound, timing issues) and could not be resolved. In order to account for this uncertainty, we always extrapolate the previously received data by  polynomials to the timestamp of the Kalman filter update. This extrapolation makes sure that even longer measurement breaks don't pose any difficulties to the estimator.
 \item[Encoder] Three of the car's wheels are equipped with encoders, using 2 magnets each. The frequency of signals from these encoders can be calculated as follows:
 \begin{equation}
 f =\frac{1}{T}=\frac{v}{\pi r}
 \end{equation}
-with the velocity $v$ and the wheel radius $r$. This means that at a velocity of $\SI{1.0}{\meter\per\second}$ and for a wheel radius of $\SI{3.6}{\centi\meter}$, we receive a velocity measurement from each wheel at a rate of about $\SI{9}{\hertz}$. These measurements are not synchronized as the wheels start at different angles. All measurements are received by the arduino, averaged, and then sent to the filter at a constant rate of $\SI{50}{\hertz}$. Since even with three encoders we can't reach a real update rate of 50 Hertz, we assume a rather high encoder measurement noise in the measurement noise matrix $\bm{R}$ to account for equal consecutive measurements.
+with the velocity $v$ and the wheel radius $r$. This means that at a velocity of $\SI{1.0}{\meter\per\second}$ and for a wheel radius of $\SI{3.6}{\centi\meter}$, we receive a velocity measurement from each wheel at a rate of about $\SI{9}{\hertz}$. These measurements are not synchronized as the wheels start at different angles. All measurements are received by the arduino, averaged, and then sent to the filter at a constant rate of $\SI{50}{\hertz}$. Since even with three encoders we can't reach a real update rate of $\SI{50}{\hertz}$, we assume a rather high encoder measurement noise in the measurement noise matrix $\bm{R}$ to account for equal consecutive measurements.
 \end{description}
 \subsection{Mapping to the track reference frame}
 The estimator discussed above returns a state estimate in the inertial frame which then needs to be transformed into the track reference frame. The coordinates in the track reference frame are the curvilinear abscissa $s$, the lateral position error $e_Y$, and the heading error $e_\psi$. The procedure for this transformation is described below.\\
@@ -233,9 +233,11 @@ x_i&y_i
 \begin{enumerate}
 \item Find the closest vertex $\bm{x}_i$ of the track to the current position of the car
 \item Select a set of vertices around vertex $i$
-\item Use this set to approximate the track locally using a polynom of $p$-th order, returning functions for the coordinates $(x,y)=f(s)$ and curvature $c=f(s)$
+\item Use this set to approximate the track locally using a polynomial, returning functions for the coordinates $(x,y)=f(s)$ and curvature $c=f(s)$
 \item Use these functions to calculate the current curvilinear abscissa $s$, lateral position $e_Y$ and heading error $e_\psi$.
 \end{enumerate}
+The number of points used for the approximation and the polynomial degree have to be chosen in such a way to provide an accurate fit throughout the entire prediction horizon.\\
+In practice, we used a polynomial of 8\textsuperscript{th} degree. This polynomial proved to approximate the piecewise linear curvature well enough while keeping the complexity of the optimization problem at a reasonable level.
 %The procedure is shown in fig. \ref{fig:s_ey_poly}.
 %\begin{figure}[ht]
 %    \centering
@@ -245,7 +247,7 @@ x_i&y_i
 %\end{figure}
 
 \section{System Identification}\label{sec:sysID}
-In order to provide an accurate model to the MPC, the system's dynamics are identified at each time step. The dynamic bicycle model from eq. (\eqref{eq:dynModel}) {\bfseries{when refer to eq put parenthesis around it}} is used to derive a Linear Regression model that uses functions of the system's states as features. State estimates from previous laps are then used to calculate current parameters $\theta_{i,j}$.
+In order to provide an accurate model to the MPC, the system's dynamics are identified at each time step. The dynamic bicycle model from eq. \eqref{eq:dynModel} is used to derive a Linear Regression model that uses functions of the system's states as features. State estimates from previous laps are then used to calculate current parameters $\theta_{i,j}$.
 
 Linear Regression model of the dynamic bicycle model:
 \begin{align}
@@ -329,7 +331,7 @@ Since we need to maintain a constant input rate of $\SI{10}{\hertz}$ while the o
     \label{fig:timing}
 \end{figure}
 
-Below are described all steps that are performed during one time step (asynchronously):
+Below are described all steps that are performed during one time step (asynchronously). Additionally, figure \ref{fig:controlStructure} illustrates the closed-loop system.
 \begin{enumerate}
 \item State estimation
 \begin{enumerate}
@@ -356,6 +358,14 @@ Below are described all steps that are performed during one time step (asynchron
 \item Send the optimal input to the actuators
 \end{enumerate}
 \end{enumerate}
+
+\begin{figure}[ht]
+    \centering
+  \includegraphics{../../Figures/Illustrator/ControlDiagram.pdf}
+    \caption{Control structure}
+    \label{fig:controlStructure}
+\end{figure}
+
 \section{Experiments}
 %{\bfseries{Made a new Chapter for experimental results}} 
 The experiments were performed in a closed space at UC Berkeley. The available area had a size of about 5 by 8 meters and provided enough space for a simple race track.\\
@@ -369,11 +379,12 @@ We used a constant sample size for the system identification of 120 points per l
 \end{figure}
 
 \paragraph{Results and discussion}
-After driving 3 laps using a path following MPC with a kinematic bicycle model at $v_{Ref}=\SI{1.0}{\meter\per\second}$, the LMPC strategy starts in the 4\textsuperscript{th} lap. The reference speed yields a path following lap time of about $t_{pf}=\SI{21}{\second}$. We can see in fig. \ref{fig:exp_lapTime} that the lap time decreases rapidly within the first few learning iterations before it converges to a trajectory that takes about $t_{22}=\SI{7.5}{\second}$ at an average speed of $\SI{2.5}{\meter\per\second}$.\\
+The first 3 laps a controlled by a a path following MPC with a kinematic bicycle model at $v_{Ref}=\SI{1.0}{\meter\per\second}$, this reference speed yields a path following lap time of about $t_{pf}=\SI{21}{\second}$. These 3 laps are necessary to create a safe set containing two laps and to provide enough data for the system identification. The LMPC strategy starts in the 4\textsuperscript{th} lap. We can see in fig. \ref{fig:exp_lapTime} that the lap time decreases rapidly within the first few learning iterations before it converges to a trajectory that takes about $t=\SI{7.55}{\second} \pm \SI{0.25}{\second}$ at an average speed of $\SI{2.5}{\meter\per\second}$.\\
 Figures \ref{fig:exp_v} and \ref{fig:exp_e_Y} illustrate the converging behavior of velocities and lateral deviation. Even though especially lateral velocity measurements are very noisy, the combination of system identification and LMPC manages to converge to an optimal trajectory.
 Figure \ref{fig:exp_v_over_xy} visualizes the car's velocity at each point of the track during one optimal iteration. {\bfseries{This figure is pretty cool, make sure to have in your presentation. Also, could you compare it with the optimal trajectory. We can discuss about how to compute this}} \\
-As we can see, the iteration cost in fig. \ref{fig:exp_lapTime} does not continuously decrease but instead it oscillates around a mean value of about $\SI{7.5}{\second}$. This is due to the model mismatch between the MPC formulation and the real car dynamics, which also arises from inaccurate measurements that are used for the system identification. Robust ILMPC and how to handle model mismatch is subject of current research.\\
-We found out that, in order to ensure feasibility and to avoid numerical issues, the coefficients of the soft lane constraints from eq. \eqref{eq:softLaneConstraints} had to be chosen in such a way that they can always be violated by a small amount. In contrast, too high values in combination with model mismatch can lead to solver difficulties {\bfseries{Just state that in order to be real time feasible the we introduced soft constraint and therefore we tightened the constrained by 5/10cm?}}.
+As we can see, the iteration cost in fig. \ref{fig:exp_lapTime} does not continuously decrease but instead it oscillates around a mean value of about $\SI{7.5}{\second}$. This is due to the model mismatch between the MPC formulation and the real car dynamics. The model mismatch arises from inaccurate measurements that are used for the system identification and from the polynomial approximation of the curvature. Robust ILMPC and how to handle model mismatch is subject of current research.\\
+We found out that, in order to ensure feasibility and to avoid numerical issues, the lane width $w_{Lane}$ in eq. \eqref{eq:softLaneConstraints} is a tuning parameter and had to be chosen about $\SI{5}{\centi\meter}$ smaller than the actual lane width. That way, this soft constraint can be violated by a small amount while the car still stays on the track.
+
 Figure \ref{fig:xy_safeset} illustrates the predicted trajectory at one timestep in lap 6. At this point, the safe set consists of the two previous laps 4 and 5. The terminal predicted state lies within the boundaries of the safe set - as it is enforced by the terminal constraints.
 
 %{\bfseries{You never show something about the SS, it your be nice to have the the figure with the a box representing the car and the predicted trajectory that end in SS, I am not sure that you have these data. Or maybe show that you reach convergence, by showing the in x-y plane the trajectories that overlaps. It seems it would be possible to do a deeper analysis of the experimental results, LET DISCUSS ALSO ABOUT THIS}}

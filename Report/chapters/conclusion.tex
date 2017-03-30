@@ -1,8 +1,8 @@
 \chapter{Conclusion and Outlook}
 
 \section{Conclusion}
-The goal of this project was to extend the existing ILMPC strategy to repetitive tasks and test this theory on the race driving problem.\\
-We were able to show that - by only little extensions - the ILMPC strategy is also applicable to continuous repetitive systems. The resulting controller is feasible and stable (but not necessarily nondecreasing/yields under certain assumptions non-decreasing iteration cost). Simulations and experiments on a real car showed that it is real time feasible and converges to a locally optimal solution.\\
+The goal of this project was to extend the existing LMPC strategy to repetitive tasks and test this theory on the race driving problem.\\
+We were able to show that - by only little extensions - the LMPC strategy is also applicable to continuous repetitive systems. The resulting controller is feasible and stable (but not necessarily nondecreasing/yields under certain assumptions non-decreasing iteration cost). Simulations and experiments on a real car showed that it is real time feasible and converges to a locally optimal solution.\\
 Our control strategy does not need any offline computations beforehand and works in real time - even for a complex system with 6 states and long prediction horizons of 30 time steps.\\
 We developed an experimental setup using a 1:10 scale remote-controlled race car (BARC) that is easy to transport and set up at different locations.\\
 We presented an online system identification method that allowed us to optimize the trajectory without prior knowledge of the system's parameters. And even though we were using low-cost sensors we were able to develop an estimator that provides reliable state estimates of sufficient quality for race driving.\\
@@ -20,7 +20,7 @@ A strong advantage of using the LMPC strategy in combination with online system 
 %\end{itemize}
 
 \section{Outlook and future work}
-(We were not able to prove non-decreasing cost...)\\
+%(We were not able to prove non-decreasing cost...)\\
 While we were assuming no model mismatch in simulations of the LMPC strategy, we clearly had some model mismatch in the real world experiments. How to handle this model mismatch and what assumptions and assertions can still be made in this scenario is subject of current research.\\
 Also, so far the LMPC solution converges to a local optimum but we don't know a method to find a global optimum. Developing a systematic approach that finds a global optimum (e.g. by artificially disturbing the solution trajectory) is a topic that could improve this method.\\
 Another idea that can lead to faster convergence to the optimal solution can be to use symmetries of state dynamics within iterations. As in the car racing example, this would lead to similar treatment of similar track sections (e.g. deceleration before, acceleration in curves).\\

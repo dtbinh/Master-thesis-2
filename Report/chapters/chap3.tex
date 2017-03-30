@@ -1,8 +1,8 @@
 \chapter{Application on race driving}
-This chapter presents the application of the previously developed LMPC to race driving. First, two car model formulations are presented which approximate real car dynamics with different accuracies. Then, the LMPC formulation and cost function are introduced and simulations are performed to verify the controller performance.
+This chapter presents the application of the previously developed RLMPC to race driving. First, two car model formulations are presented which approximate real car dynamics with different accuracies. Then, the RLMPC formulation and cost function are introduced and simulations are performed to verify the controller performance.
 
 \section{Race driving}
-In general, the goal of race driving is to drive through a given racetrack with the lowest possible lap time. As opposed to real world race driving in which usually multiple cars are involved, we are assuming single car race driving to simplify this problem. Mathematically, this can be represented by an optimization problem that minimizes the lap time given a mathematical model of the car and certain constraints (e.g. lane boundaries, maximum acceleration and steering angle). Depending on the complexity of the model and the length and the shape of the track this can result in a very complex optimization problem which cannot be solved in real time.
+In general, the goal of race driving is to drive through a given racetrack with the lowest possible lap time. While in real world race driving usually multiple cars are involved, we simplify this problem by assuming only a single car. Mathematically, this can be represented by an optimization problem which minimizes the lap time, given a mathematical model of the car and certain constraints (e.g. lane boundaries, maximum acceleration and steering angle). Depending on the complexity of the model and the length and shape of the track this can result in a highly complex optimization problem.
 %\begin{itemize}
 %\item Mathematical: Minimum time problem
 %\item Lane constraints
@@ -13,11 +13,11 @@ In general, the goal of race driving is to drive through a given racetrack with 
 %\end{itemize}
 
 \section{Car model formulations}
-There are many ways to model the dynamics of a car. They range from simple models with few states which manage to approximate real car dynamics for low speeds to sophisticated models with a great number of states wich account for slipping conditions (longitudinal and lateral) and effects of tire suspensions.
+There are many ways to model the dynamics of a car. There are simple models with few states which approximate real car dynamics for low speeds. More sophisticated models with a great number of states can account for slipping conditions (longitudinal and lateral) and effects of tire suspensions.
 
 This thesis presents two basic models, the \emph{kinematic bicycle model} and the \emph{dynamic bicycle model}. Both assume a two-tire bicycle model in which the two front and rear tires of a real car are combined to one front and one rear tire. Furthermore, the former model assumes that the tires can not slip laterally whereas the latter allows for lateral movements of the tires.
 
-Additionally, two coordinate frames are introduced. The first is an inertial x-y-frame whereas the second is a track-based frame that uses coordinates relative to the race track.
+Additionally, two coordinate frames are introduced. The first is an inertial x-y-frame, the second is a track-based frame that uses coordinates relative to the race track.
 
 \subsection{Kinematic bicycle model}
 The kinematic bicycle model has been adapted from \cite{rajamani2005vehicle}. It is based on the no-slip condition which means that the velocity vectors at both wheels A and B are directed in the orientation of their respective wheel.
@@ -43,11 +43,10 @@ with the car's slip angle
     \beta = \arctan\left(\frac{L_F}{L_F+L_R}\cdot \tan(\delta_F)\right).
 \end{equation}
 The control inputs are the longitudinal acceleration $a$ and the steering angle $\delta_F$ at the front wheel.\\
-The kinematic bicycle approximates real car dynamics well for low velocities and as long as there is no or only very little tire slip. However, especially for slippery road conditions and higher velocities model mismatch increases to such an extent that it can not be used to reliably predict real car dynamics anymore. This is why the \emph{Dynamic bicycle model} is introduced in the next section.
+The kinematic bicycle approximates real car dynamics well for low velocities and as long as there is no or only very little tire slip. However, especially for slippery road conditions and higher velocities model mismatch increases to such an extent that it can not be used to reliably predict real car dynamics anymore. This is why the \emph{dynamic bicycle model} is introduced in the next section.
 
 \subsection{Dynamic bicycle model}
-As opposed to the kinematic bicycle model which is derived geometrically, the dynamic bicycle model is based on forces that occur between the front and rear tires and the road. Its states are the longitudinal and lateral velocity $v_x$ and $v_y$ which are represented in the body fixed frame, and the yaw rate $\dot \psi$. The state dynamics presented in eq. \eqref{eq:dynModel} can be derived by applying Newton's second law of motion and have been taken from \cite{Kong2015}. %\hl{The model equations have been simplified by considering the steering angle $\delta_F$ only in the lateral dynamics and neglecting the lateral tire force in the longitudinal dynamics. CAN REMOVE THIS SENTENCE}
-The corresponding model is illustrated in fig. \eqref{eq:dynModel}.
+While the kinematic bicycle model which is derived geometrically, the dynamic bicycle model is based on forces that occur between the tires and the road. Its states are the longitudinal and lateral velocity $v_x$ and $v_y$ in a body fixed frame, and the yaw rate $\dot \psi$. The corresponding model is illustrated in fig. \ref{fig:dynModel}. The state dynamics presented in eq. \eqref{eq:dynModel} can be derived by applying Newton's second law of motion and have been taken from \cite{Kong2015}. %\hl{The model equations have been simplified by considering the steering angle $\delta_F$ only in the lateral dynamics and neglecting the lateral tire force in the longitudinal dynamics. CAN REMOVE THIS SENTENCE}
 \begin{align}
 \begin{split}
 \label{eq:dynModel}
@@ -62,13 +61,13 @@ The corresponding model is illustrated in fig. \eqref{eq:dynModel}.
 	\caption{Dynamic bicycle model}
 	\label{fig:dynModel}
 \end{figure}
-These state dynamics assume that there is only lateral but no longitudinal tire slip which might occur during high accelerations or decelerations. This is done to simplify the model and since longitudinal acceleration is a control input that we can restrict to remain within bounds to avoid longitudinal tire slip.
+These state dynamics assume that there is only lateral but no longitudinal tire slip which might occur during high accelerations or decelerations. This is done to simplify the model and since longitudinal acceleration is a control input that we can restrict small values to avoid longitudinal tire slip.
 The tire forces $F_F$ and $F_R$ depend on the lateral slipping angle $\alpha_F$ and $\alpha_R$ of the front and the rear tire. One common function that approximates the tire forces is the \emph{Pacejka} function from \cite{pacejka1987} (often referred to as \emph{Magic formula}):
 % REFERENCE
 \begin{equation}\label{eq:pacejka}
 f_P(\alpha) = D\cdot\sin(C\cdot\arctan(B\cdot\alpha))
 \end{equation}
-Note: Eq. \eqref{eq:pacejka} is a simplified version of the more general Pacejka function.\\
+\emph{Note:} Eq. \eqref{eq:pacejka} is a simplified version of the more general Pacejka function.\\
 The Pacejka function is illustrated in fig. \ref{fig:Pacejka} for two sets of parameters, one for tire forces on a dry road and one for a snowy road. The chosen values are not parameters of a real tire, they are only meant for illustration purposes.
 \begin{table}[h!]
 \centering
@@ -98,9 +97,10 @@ Eq. \eqref{eq:dynExtra} show the relations between the pacejka function and the 
     \alpha_R &= \arctan\left(\frac{\dot y-L_R\dot\psi}{\lvert\dot x\rvert}\right)
 \end{split}
 \end{align}
+The terms $m$, $g$, and $\mu$ are the mass, gravitational constant, and road-tire friction, respectively. Their product in eq. \eqref{eq:dynExtra} yields the maximum tire friction force.
 
 The dynamic bicycle model is more complex than the kinematic model but approximates real car dynamics very well even for higher speeds and various street conditions. However, it is important to choose the right set of Pacejka coefficients or measure them properly to obtain reliable results.\\
-Also, one might experience numerical problems when using first order approximations of this model. Too long time steps might result in alternating and increasing slip angles and tire forces.
+Also, one might experience numerical problems when using first order approximations of this model. Too long time steps can result in alternating and increasing slip angles and tire forces.
 
 \subsection{Track reference frame}
 So far two models were introduced: The kinematic model was constructed in an inertial frame whereas the dynamic model was constructed in a body-fixed frame. However, in race driving, we assume that the car follows a given track. In order to simplify calculations, we introduce a reference frame that expresses state dynamics in terms of coordinates relative to the race track.\\
@@ -157,13 +157,13 @@ and equation \eqref{eq:generalLMPC} as the optimization function.
 The racing problem is formulated by using a constant cost function on whenever the car is located between the start and finish line and zero cost when the car has crossed the finish line \cite{Rosolia2016}. Thus the stage cost is defined as follows:
 \begin{equation}
 h(\bm{x}_t,\bm{u}_t)=\begin{cases}
-1&\text{if }\bm{x}_t\not\in\mathcal{L},\\
-0&\text{if }\bm{x}_t\in\mathcal{L}.
+1&\text{if }\bm{x}_t\not\in\mathcal{X}_F,\\
+0&\text{if }\bm{x}_t\in\mathcal{X}_F.
 \end{cases}
 \end{equation}
-where $\mathcal{L}$ is the set of points beyond the finish line at $s_{target}$:
+where $\mathcal{X}_F$ is the set of points beyond the finish line at $s_{target}$:
 \begin{equation}
-\mathcal{L}=\left\{\bm{x}\in \mathbb{R}^6: \bm{xe}_6^T=s>s_{target}\right\}
+\mathcal{X}_F=\left\{\bm{x}\in \mathbb{R}^6: \bm{xe}_6^T=s>s_{target}\right\}
 \end{equation}
 where $e_6$ is the 6-th standard basis in $\mathbb{R}^6$.\\
 Lane boundaries are modeled as state constraints on the lateral position error $e_Y$:
@@ -257,7 +257,8 @@ The curvature $c(s)$ is given and constructed in such a way that the track is cl
   	\caption{Curvature $c(s)$}
 	\label{fig:Sim_curv}
 \end{figure}
-\\Lane constraints are implemented as soft constraints in the cost function: % reference borrelli script
+\\
+\paragraph{Lane constraints} Lane constraints are implemented as soft constraints in the cost function \cite[p.~114]{Borrelli2003}:
 \begin{equation}\label{eq:softLaneConstraints}
 J_{Lane} = \sum_{i=1}^N [c_1\epsilon_i^2 + c_2\epsilon_i], \epsilon_i = |e_{Y,i}|-\frac{w_{Lane}}{2}
 \end{equation}
