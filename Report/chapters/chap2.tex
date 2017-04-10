@@ -4,7 +4,7 @@ This chapter gives a general introduction to the concept of Model Predictive Con
 \section{Model Predictive Control}
 Model Predictive Control is a concept that has been developed since the late 1970s, starting from Chemical Process Industries \cite{garcia1989model}. Since then, increasing computational power  has helped further research on this method and has extended it to other fields beyond chemical industries.
 %One strong advantage of MPC is its ability to include state and input constraints 
-This section gives a brief overview on the mathematical concepts of MPC \cite{Borrelli2003}.\\
+This section gives a brief overview of the mathematical concepts of MPC \cite{Borrelli2003}.\\
 Given the discrete time system
 \begin{equation}\label{eq:systemDynamics}
 \bm{x}_{t+1}=f(\bm{x}_t,\bm{u}_t),
@@ -26,7 +26,7 @@ J_{t\rightarrow t+N}^*(\bm{x}_t,\bm{u}_{t\rightarrow t+N-1})&=\min_{\bm{u}_{t|t}
 \text{s.t.}\notag\\
 \bm{x}_{k+1|t}&=f(\bm{x}_{k|t},\bm{u}_{k|t}),\ \forall k\in [t,...,t+N-1]\\
 \bm{x}_{t|t}&=\bm{x}_t\\
-\bm{x}_{k|t}&\in\mathcal{X},\ \bm{u}_k\in\mathcal{U},\ \forall k\in [t,...,t+N-1]
+\bm{x}_{k|t}&\in\mathcal{X},\ \bm{u}_{k|t}\in\mathcal{U},\ \forall k\in [t,...,t+N-1]
 \end{align}
 \end{subequations}
 with the optimal solution for the state $\bm{x}_{t|t\rightarrow t+N|t}^*$ and for the input $\bm{u}_{t|t\rightarrow t+N-1|t}^*$. The first optimal input is applied to the system:
@@ -96,13 +96,13 @@ J_{t\rightarrow t+N}^{\scalebox{0.4}{LMPC},j}(\bm{x}_t^j)&=\min_{\bm{u}_{t|t},..
 \text{s.t.}\notag\\
 \bm{x}_{k+1|t}&=f(\bm{x}_{k|t},\bm{u}_{k|t}),\forall k\in[t,...,t+N],\label{eq:LMPCupdate}\\
 \bm{x}_{t|t}&=\bm{x}_t^j,\\
-\bm{x}_{k|t}&\in\mathcal{X},\bm{u}_k\in\mathcal{U},\forall k\in[t,...,t+N],\\
+\bm{x}_{k|t}&\in\mathcal{X},\bm{u}_{k|t}\in\mathcal{U},\forall k\in[t,...,t+N],\\
 \bm{x}_{t+N|t}&\in\mathcal{SS}^{j-1}\label{eq:generalLMPC5}.
 \end{align}\label{eq:generalLMPC}
 \end{subequations}
 Let
 \begin{align}
-\bm{u}_{t:t+N|t}^{*,j}&=[\bm{u}_{t|t}^{*,j},...,\bm{u}_{t+N-1|t}^{*,j}]\\
+\bm{u}_{t:t+N-1|t}^{*,j}&=[\bm{u}_{t|t}^{*,j},...,\bm{u}_{t+N-1|t}^{*,j}]\\
 \bm{x}_{t:t+N|t}^{*,j}&=[\bm{x}_{t|t}^{*,j},...,\bm{x}_{t+N|t}^{*,j}]
 \end{align}
 be the optimal solution of Eq. \eqref{eq:generalLMPC} at time $t$ of the $j$-th iteration. Then, at time $t$ of iteration $j$, the first element of $\bm{u}_{t:t+N|t}^{*,j}$ is applied to the system \eqref{eq:systemDynamics}
@@ -111,7 +111,7 @@ be the optimal solution of Eq. \eqref{eq:generalLMPC} at time $t$ of the $j$-th 
 \end{equation}
 This is repeated at time $t+1$, based on the new state $\bm{x}_{t+1|t+1}=\bm{x}_{t+1}^j$, yielding a \emph{moving} or \emph{receding horizon} control strategy.\\
 It can be shown that this control strategy is recursively feasible and that the equilibrium $\bm{x}_F$ is asymptotically stable for the closed-loop  system \eqref{eq:systemDynamics} and \eqref{eq:generalLMPC}. Additionally, the iteration cost $J^j$ does not increase with the iteration index $j$ and the trajectory converges to a local optimum for $j\rightarrow\infty$.\\
-The LMPC strategy presented above applies for batch processes, i.e. the initial state $\bm{x}_0^j=\bm{x}_S$ has to be the same for each iteration. However, it is not applicable for continuous repetitive systems, for which the final state of an iteration corresponds to the initial state of the next iteration. The next section shows the extension for the repetitive case.
+The LMPC strategy presented above applies for batch processes, i.e. the initial state $\bm{x}_0^j=\bm{x}_S$ in Eq. \eqref{eq:generalProblem3} has to be the same for each iteration. However, it is not applicable for continuous repetitive systems, for which the final state of an iteration corresponds to the initial state of the next iteration. The next section shows the extension for the repetitive case.
 
 \section{Repetitive Learning Model Predictive Control}
 This section presents a learning control strategy for continuous repetitive systems. We prove recursive feasibility, non-increasing iteration cost, and optimality, using the mathematical tools we introduced in section \ref{sec:LMPC}.\\
@@ -125,7 +125,7 @@ This section presents a learning control strategy for continuous repetitive syst
 %If the dynamics are periodic in one state, the periodicity is expressed using a standard basis vector $\bm{p}=P\bm{e}_i$, where $P$ is the periodicity in state $i$.\\
 %The switching from one iteration to the next one happens when the periodic state reaches $P$, i.e. $\bm{xe}_i^T\geq P$.\\
 %{\bfseries{NOTE: In the following you will see what I meant in the previous comment. Basically, first you can give an explanation in words that explains the equation that you wanna to introduce.}}\\
-As the initial state depends on the final state of the previous iteration for repetitive systems, it can not be constrained to a single state $\bm{x}_S$ (as in \eqref{eq:generalProblem3}). The problem from Eq. \eqref{eq:generalProblem} therefore becomes the following problem:
+As the initial state depends on the final state of the previous iteration for repetitive systems, it can not be constrained to a single state $\bm{x}_S$ (as in \eqref{eq:generalProblem3}). The problem from Eq. \eqref{eq:generalProblem} therefore needs to be slightly changed:
 \begin{subequations}\label{eq:generalNewProblem}
 \begin{align}
 J_{0\rightarrow \infty}^*(\bm{x}_0)&=\min_{\bm{x}_0,\bm{u}_0,\bm{u}_1,\ldots} \sum\limits_{k=0}^{\infty} h(\bm{x}_k,\bm{u}_k)\\
@@ -137,6 +137,7 @@ J_{0\rightarrow \infty}^*(\bm{x}_0)&=\min_{\bm{x}_0,\bm{u}_0,\bm{u}_1,\ldots} \s
 \end{subequations}
 % Clean this section!
 The set $\mathcal{L}$ contains all feasible initial states.
+
 Continuous repetitive systems are defined by smooth transitions between two iterations. In particular, we have that the final state of iteration $j-1$ becomes the initial state of iteration $j$,
 \begin{equation}\label{eq:transCond}
 	\bm{x}_0^{j+1}=\bm{x}_{\bar t_j+1}^j-\bm{p}\ \forall j\geq 0,
@@ -253,7 +254,7 @@ The proof follows as in the LMPC for iterative tasks \cite{Rosolia2016}.
 
 \subsection{Analysis and discussion of the proposed method}
 The previous section extended the LMPC strategy from \cite{Rosolia2016} for batch processes to repetitive processes. This extension allows smooth transitions between iterations. Additionally, it does not require equal initial states for each iteration. Instead, the initial state of an iteration $j$ matches the final state of the previous iteration $j-1$.\\
-Under the assumption of no model mismatch the proposed method is feasible, stable, and it converges to an optimal solution. In general, the method can be applied to various repetitive systems. However, the important assumption \ref{as:nonincLMPC} has to be verified individually in order to guarantee non-increasing cost.
+Under the assumption of no model mismatch the proposed method is feasible, stable, and it converges to an optimal solution. In general, the method can be applied to various repetitive systems. However, assumption \ref{as:nonincLMPC} has to be verified individually in order to guarantee non-increasing cost.
 
 % Explain concept of going to 2*P
 % Define J (not to infinity but only to P)

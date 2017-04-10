@@ -46,7 +46,7 @@ The control inputs are the longitudinal acceleration $a$ and the steering angle 
 The kinematic bicycle approximates real car dynamics well for low velocities and as long as there is no or only very little tire slip. However, especially for slippery road conditions and higher velocities, model mismatch increases to such an extent that it can not be used to reliably predict real car dynamics anymore. This is why the \emph{dynamic bicycle model} is introduced in the next section.
 
 \subsection{Dynamic bicycle model}
-While the kinematic bicycle model is derived geometrically, the dynamic bicycle model is based on forces that occur between the tires and the road. Its states are the longitudinal and lateral velocity $v_x$ and $v_y$ in a body fixed frame, and the yaw rate $\dot \psi$. The corresponding model is illustrated in Fig. \ref{fig:dynModel}. The state dynamics presented in eq. \eqref{eq:dynModel} can be derived by applying Newton's second law of motion \cite{Kong2015}: %\hl{The model equations have been simplified by considering the steering angle $\delta_F$ only in the lateral dynamics and neglecting the lateral tire force in the longitudinal dynamics. CAN REMOVE THIS SENTENCE}
+While the kinematic bicycle model is derived geometrically, the dynamic bicycle model is based on forces that occur between the tires and the road. Its states are the longitudinal and lateral velocity $v_x$ and $v_y$ in a body fixed frame, and the yaw rate $\dot \psi$. The corresponding model is illustrated in Fig. \ref{fig:dynModel}. The state dynamics presented in eq. \eqref{eq:dynModel} can be derived by applying Newton's second law of motion \cite{Kong2015}:
 \begin{align}
 \begin{split}
 \label{eq:dynModel}
@@ -55,14 +55,13 @@ While the kinematic bicycle model is derived geometrically, the dynamic bicycle 
     \ddot \psi &= \frac{1}{I_Z}\cdot(L_F\cdot F_F - L_R\cdot F_R)
 \end{split}
 \end{align}
+These state dynamics assume that there is only lateral but no longitudinal tire slip which might occur during high accelerations or decelerations. We can avoid longitudinal tire slip by constraining the acceleration input $a$ to small values. This allows us to neglect this effect in the model formulation.
 \begin{figure}[ht]
 	\centering
   	\includegraphics{../../Figures/Models/DynModel.pdf}
 	\caption{Dynamic bicycle model}
 	\label{fig:dynModel}
 \end{figure}
-These state dynamics assume that there is only lateral but no longitudinal tire slip which might occur during high accelerations or decelerations. We can avoid longitudinal tire slip by constraining the acceleration input $a$ to small values. This allows us to neglect this effect in the model formulation.
-
 The tire forces $F_F$ and $F_R$ depend on the lateral slipping angles $\alpha_F$ and $\alpha_R$ of the front and the rear tire, respectively. One common function that approximates the tire forces is the \emph{Pacejka} function from \cite{pacejka1987} (often referred to as \emph{Magic formula}):
 % REFERENCE
 \begin{equation}\label{eq:pacejka}

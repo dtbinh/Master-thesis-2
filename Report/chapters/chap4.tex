@@ -1,5 +1,6 @@
 \chapter{Implementation}
-In this chapter the presented control strategy is implemented for a 1:10 scale remote-controlled car. The car is a commercially available hobby race car which has been modified to include sensors and onboard CPUs. First, the car and its available sensors and actuators are introduced. We present the methods used to find a mapping from the optimal calculated commands to the actuator inputs. In section \ref{sec:stateEstimation} a state estimation strategy based on Extended Kalman Filters and the projection onto a given race track is are presented. Section \ref{sec:sysID} shows how we use Linear Regression to calculate system dynamics online. This allows adapting to varying dynamics (e.g. different tire behaviour in different parts of the track). Finally, section \ref{sec:implementation} presents the technical implementation and test results.\\
+In this chapter the presented control strategy is implemented on a 1:10 scale remote-controlled car. The car is a commercially available hobby race car which has been modified to include sensors and onboard CPUs.\\
+First, the car and its available sensors and actuators are introduced. We present the methods used to find a mapping from the optimal calculated commands to the actuator inputs. In section \ref{sec:stateEstimation} a state estimation strategy based on Extended Kalman Filters and the projection onto a given race track are presented. Section \ref{sec:sysID} shows how we use Linear Regression to calculate system dynamics online. This allows adapting to varying dynamics (e.g. different tire behaviour in different parts of the track). Finally, section \ref{sec:implementation} presents the technical implementation and test results.\\
 %{\bfseries{Reformulate, here just give the reader an idea of you wanna cover. The figure is too detailed for an intro.}}
 %Figure \ref{fig:controlStructure} shows a simplified control block diagram. After an introduction of the system, this chapter goes through the blocks of system identification, state estimation, and control.
 %\begin{figure}[ht]
@@ -60,7 +61,8 @@ which yields a maximum curvature of $c_{max}=\SI{1.24}{\per\meter}$.\\
     \caption{Steering delay}
     \label{fig:d_f_delay}
 \end{figure}
-Since the LMPC formulation uses a sample time of $dt=\SI{0.1}{\second}$, we model this delay as a 2-step delay {\bfseries{For the delay use an augmented system, it is ok to implement as you did in the Julia code, but it is much easier for the reader if you write the standard formulation of delay --> mb: You mean like this?}}:
+Since the LMPC formulation uses a sample time of $dt=\SI{0.1}{\second}$, we model this delay as a 2-step delay:
+%{\bfseries{For the delay use an augmented system, it is ok to implement as you did in the Julia code, but it is much easier for the reader if you write the standard formulation of delay --> mb: You mean like this?}}:
 %\begin{equation}
 %x_{k+1}=f(x_k,a_k,\delta_{F,k-2}).
 %\end{equation}
@@ -91,7 +93,7 @@ To identify the coefficients of these two regimes, two groups of open loop tests
 The resulting correlations can be approximated by two affine functions, where one describes the positive and the other one describes the negative acceleration region.
 
 %{\bfseries{Question: Do you have these maps is the low level controller? Don't you have that saturation for the acceleration? -> Answer: No, there's no saturation in the final version. I think we didn't have the problem of too low accelerations because we tuned the LMPC more aggressive so that it never needed to slow down that much.}}
-The results of the coefficients are listed in table \ref{tab:v_mapping}.
+The results of the coefficients are listed in Table \ref{tab:v_mapping}.
 \begin{table}[h!]
 \centering
 \caption{Pacejka coefficients for different road conditions}
@@ -129,7 +131,7 @@ Various different techniques have been explored in the course of this thesis and
 \end{figure}
 The kinematic model combines measurements of acceleration, velocity, and position by integrating (see sec. \ref{sec:filterModel}).
 
-This filtering approach is based on the assumption that only the kinematic bicycle model is able to estimate the current heading angle $\hat\psi$ using measurements of coordinates and velocity, while the point mass model would not be able to account for the drift in the $\psi$ measurement. This is why the kinematic bicycle model is used to calculate the heading angle as well as the inertial coordinates. On the other hand, the kinematic model is well suited to combine measurements of accelerations, velocities, and position, which is why we use this model for the estimation of the yaw rate and velocities.
+This filtering approach is based on the assumption that only the kinematic bicycle model is able to estimate the current heading angle $\hat\psi$ using measurements of coordinates and velocity, while the point mass model would not be able to account for the drift in the $\psi$ measurement. This is why the kinematic bicycle model is used to calculate the heading angle as well as the inertial coordinates. On the other hand, the kinematic model is well suited to combine measurements of accelerations, velocities, and position. This is why we use this model for the estimation of the yaw rate and velocities.
 
 \subsection{Extended Kalman Filter}
 Kalman filters provide a general tool to calculate a state estimate using noisy and/or biased sensor measurements assuming a gaussian model for the noise. The standard Kalman filter uses a linear model of the system in order to calculate the most probable state from a set of different state measurements.\\
@@ -417,6 +419,7 @@ We used a constant sample size for the system identification of 120 points per l
     \caption{Curvature of the experimental race track}
     \label{fig:exp_curv}
 \end{figure}
+
 The first 3 laps were controlled by a a path following MPC with a kinematic bicycle model at $v_{Ref}=\SI{1.0}{\meter\per\second}$, this reference speed yields a path following lap time of about $t_{pf}=\SI{21}{\second}$. These 3 laps are required to create a safe set containing two full laps and to provide enough data for the system identification. The LMPC strategy starts in the 4\textsuperscript{th} lap.
 
 \paragraph{Results and discussion}
@@ -426,17 +429,19 @@ Figure \ref{fig:exp_v_over_xy} visualizes the car's velocity at each point of th
 \\
 We found out that, in order to ensure feasibility and to avoid numerical issues, the lane width $w_{Lane}$ in Eq. \eqref{eq:softLaneConstraints} is a tuning parameter and had to be chosen about $\SI{5}{\centi\meter}$ smaller than the actual lane width. That way, this soft constraint can be violated by a small amount while the car still stays on the track.
 
+It can be seen in Fig. \ref{fig:exp_e_Y} that, even in steady state, the system still exhibits some oscillations (compare laps 25 and 29). This is due to many uncertainties in the entire system. On one hand, these result from rare WiFi communication problems in which the car does not receive new commands for a split second. On the other hand, sometimes the MPC solver cannot find an optimal solution within the time frame of $\SI{0.1}{\second}$. In this case sub-optimal commands are used.
+
 Figure \ref{fig:xy_safeset} illustrates the predicted trajectory at one timestep in lap 6. At this point, the safe set consists of the two previous laps 4 and 5. The terminal predicted state lies within the boundaries of the safe set - as it is enforced by the terminal constraints.
 
-Figure \ref{fig:sysIDcoeff} shows the evolution of system coefficients during one lap in iteration 20. Since the velocity has only little variance, the car dynamics and its coefficients stay nearly constant. The two coefficients $c_{v_x,1}$ and $c_{v_y,2}$ are zero, because their related features are too small as to find any correlations (refer to Eq. \eqref{eq:systemID}). The remaining coefficients can be used to calculate unknown parameters:
+Figure \ref{fig:sysIDcoeff} shows the evolution of system coefficients during one lap in iteration 20. Since the velocity has only little variance, the car dynamics and its coefficients stay nearly constant. The two coefficients $c_{v_x,1}$ and $c_{v_y,2}$ are zero, because their related features are too small to find any correlations (refer to Eq. \eqref{eq:systemID}). The remaining coefficients can be used to calculate unknown parameters:
 \begin{table}[h!]
 \centering
 \caption{BARC physical parameters}
 \begin{tabular}{c|c|c}
 Physical meaning & Coefficient & Value\\
 \hline
-Cornering stiffness front tire & $c_{\alpha_F}$ & \SI{7.9}{\newton\per\radian}\\
-Cornering stiffness rear tire & $c_{\alpha_R}$ & \SI{6.1}{\newton\per\radian}\\
+Cornering stiffness front tires & $c_{\alpha_F}$ & \SI{7.9}{\newton\per\radian}\\
+Cornering stiffness rear tires & $c_{\alpha_R}$ & \SI{6.1}{\newton\per\radian}\\
 Moment of inertia & $I_z$ & $\SI{0.025}{\kilo\gram\square\meter}$
 \end{tabular}
 \end{table}
