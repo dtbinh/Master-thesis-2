@@ -1350,7 +1350,7 @@
 \pgfusepath{stroke}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=3.745471in,y=2.620140in,left,base]{\rmfamily\fontsize{8.330000}{9.996000}\selectfont \(\displaystyle \delta_{Estimate}\)}%
+\pgftext[x=3.745471in,y=2.620140in,left,base]{\rmfamily\fontsize{8.330000}{9.996000}\selectfont \(\displaystyle \delta_{\text{Estimate}}\)}%
 \end{pgfscope}%
 \begin{pgfscope}%
 \pgfsetrectcap%
@@ -1364,7 +1364,7 @@
 \pgfusepath{stroke}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=3.745471in,y=2.458862in,left,base]{\rmfamily\fontsize{8.330000}{9.996000}\selectfont \(\displaystyle \delta_{Input}\)}%
+\pgftext[x=3.745471in,y=2.458862in,left,base]{\rmfamily\fontsize{8.330000}{9.996000}\selectfont \(\displaystyle \delta_{\text{Input}}\)}%
 \end{pgfscope}%
 \end{pgfpicture}%
 \makeatother%

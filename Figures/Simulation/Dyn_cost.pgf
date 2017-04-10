@@ -1148,7 +1148,7 @@
 \pgftext[x=0.444235in,y=2.457976in,right,]{\rmfamily\fontsize{6.940000}{8.328000}\selectfont \(\displaystyle 25\)}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=0.264064in,y=1.583476in,,bottom,rotate=90.000000]{\rmfamily\fontsize{8.330000}{9.996000}\selectfont Iteration cost (\(\displaystyle t\) [\(\displaystyle s\)])}%
+\pgftext[x=0.264064in,y=1.583476in,,bottom,rotate=90.000000]{\rmfamily\fontsize{8.330000}{9.996000}\selectfont Iteration cost [\(\displaystyle s\)]}%
 \end{pgfscope}%
 \begin{pgfscope}%
 \pgftext[x=2.645553in,y=2.764476in,,base]{\rmfamily\fontsize{8.330000}{9.996000}\selectfont Total cost}%
