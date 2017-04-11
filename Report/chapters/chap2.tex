@@ -37,7 +37,7 @@ Solving Eq. \eqref{eq:generalMPC} and applying the first optimal input \eqref{eq
 There are different approaches on how this optimization problem is solved, two common ways are the \emph{Batch Approach} and the \emph{Recursive Approach}. In general, the optimization problem can be non-convex.\\
 
 \section{Learning Model Predictive Control}\label{sec:LMPC}
-Learning Model Predictive Control (LMPC) is a novel control theory that allows finding an optimal trajectory in an iterative task by learning from previous iterations. It is based on the concept of Iterative Learning Control (ILC). In general, ILCs are control strategies 
+Learning Model Predictive Control (LMPC) is a novel control strategy that allows finding an optimal trajectory in an iterative task by learning from previous iterations. It is based on the concept of Iterative Learning Control (ILC). In general, ILCs are control strategies 
 %{\bfseries{there are many different ILCs}}
 aiming to minimize the tracking error of an iterative process by improving its trajectory with every iteration, learning from previous trajectories. It is limited to fixed time processes with given tracking references. \cite{Lee2007}, \cite{Bristow2006} give overviews of existing methods on ILC.\\
 LMPC extends the framework of ILC by adding an optimization function which allows finding an optimal trajectory of optimal duration. Applying this strategy makes it possible to gradually find an optimal trajectory for complex nonlinear systems.
@@ -254,7 +254,7 @@ The proof follows as in the LMPC for iterative tasks \cite{Rosolia2016}.
 
 \subsection{Analysis and discussion of the proposed method}
 The previous section extended the LMPC strategy from \cite{Rosolia2016} for batch processes to repetitive processes. This extension allows smooth transitions between iterations. Additionally, it does not require equal initial states for each iteration. Instead, the initial state of an iteration $j$ matches the final state of the previous iteration $j-1$.\\
-Under the assumption of no model mismatch the proposed method is feasible, stable, and it converges to an optimal solution. In general, the method can be applied to various repetitive systems. However, assumption \ref{as:nonincLMPC} has to be verified individually in order to guarantee non-increasing cost.
+Under the assumption of no model mismatch the proposed method is recursively feasible, stable, and it converges to an optimal solution. In general, the method can be applied to various repetitive systems. However, assumption \ref{as:nonincLMPC} has to be verified individually in order to guarantee non-increasing cost.
 
 % Explain concept of going to 2*P
 % Define J (not to infinity but only to P)
