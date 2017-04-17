@@ -117,15 +117,14 @@ The LMPC strategy presented above applies for batch processes, i.e. the initial 
 This section presents a learning control strategy for continuous repetitive systems. We prove recursive feasibility, non-increasing iteration cost, and optimality, using the mathematical tools we introduced in section \ref{sec:LMPC}.\\
 
 \paragraph{Periodicity and switching condition}
-%First, we assume that the state dynamics and stage cost are periodic with periodicity vector $\bm{p}$:
-%\begin{align}
-%f(\bm{x}_k+\bm{p},\bm{u}_k) &= f(\bm{x}_k,\bm{u}_k)+\bm{p}\\
-%h(\bm{x}+\bm{p},\bm{u}) &= h(\bm{x},\bm{u}).
-%\end{align}
-%If the dynamics are periodic in one state, the periodicity is expressed using a standard basis vector $\bm{p}=P\bm{e}_i$, where $P$ is the periodicity in state $i$.\\
-%The switching from one iteration to the next one happens when the periodic state reaches $P$, i.e. $\bm{xe}_i^T\geq P$.\\
+First, we assume that the state dynamics are periodic with periodicity vector $\bm{p}$:
+\begin{equation}
+f(\bm{x}_k+\bm{p},\bm{u}_k) = f(\bm{x}_k,\bm{u}_k)+\bm{p}
+\end{equation}
+If the dynamics are periodic in one state, the periodicity can be expressed using a standard basis vector $\bm{p}=P\bm{e}_i$, where $P$ is the periodicity in state $i$.\\
+The switching from one iteration to the next one happens when the periodic state reaches $P$, i.e. $\bm{xe}_i^T\geq P$.\\
 %{\bfseries{NOTE: In the following you will see what I meant in the previous comment. Basically, first you can give an explanation in words that explains the equation that you wanna to introduce.}}\\
-As the initial state depends on the final state of the previous iteration for repetitive systems, it can not be constrained to a single state $\bm{x}_S$ (as in \eqref{eq:generalProblem3}). The problem from Eq. \eqref{eq:generalProblem} therefore needs to be slightly changed:
+As for repetitive systems the initial state in one iteration $j$ depends on the final state of the previous iteration $j-1$, it can not be constrained to a single state $\bm{x}_S$ (as in \eqref{eq:generalProblem3}). The problem from Eq. \eqref{eq:generalProblem} therefore needs to be slightly changed:
 \begin{subequations}\label{eq:generalNewProblem}
 \begin{align}
 J_{0\rightarrow \infty}^*(\bm{x}_0)&=\min_{\bm{x}_0,\bm{u}_0,\bm{u}_1,\ldots} \sum\limits_{k=0}^{\infty} h(\bm{x}_k,\bm{u}_k)\\

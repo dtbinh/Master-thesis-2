@@ -102,8 +102,8 @@ Coefficient & Value\\
 \hline
 $c_1^+$ & 0.162\\
 $c_2^+$ & -14.7\\
-$c_1^+$ & 0.0149\\
-$c_2^+$ & -1.47\\
+$c_1^-$ & 0.0149\\
+$c_2^-$ & -1.47\\
 $c_M$ & 0.5
 \end{tabular}
 \label{tab:v_mapping}
@@ -261,7 +261,7 @@ The extended Kalman filter runs at a frequency of 50 Hertz and assumes that all 
 \begin{equation}
 f =\frac{1}{T}=\frac{v}{\pi r}
 \end{equation}
-with the velocity $v$ and the wheel radius $r$. This means that at a velocity of $\SI{1.0}{\meter\per\second}$ and for a wheel radius of $\SI{3.6}{\centi\meter}$, we receive a velocity measurement from each wheel at a rate of about $\SI{9}{\hertz}$. These measurements are not synchronized as the wheels start at different angles. All measurements are received by the Arduino, averaged, and then sent to the filter at a constant rate of $\SI{50}{\hertz}$. Since even with three encoders we can't reach an update rate of $\SI{50}{\hertz}$, we assume a rather high encoder measurement noise in the measurement noise matrix $\bm{R}$ to account for equal consecutive measurements.
+with the velocity $v$ and the wheel radius $r$. This means that at a velocity of $\SI{1.0}{\meter\per\second}$ and for a wheel radius of $\SI{3.6}{\centi\meter}$, we receive a velocity measurement from each wheel at a rate of $\SI{9}{\hertz}$. These measurements are not synchronized as the wheels start at different angles. All measurements are received by the Arduino, averaged, and then sent to the filter at a constant rate of $\SI{50}{\hertz}$. Since even with three encoders we can't reach an update rate of $\SI{50}{\hertz}$, we assume a rather high encoder measurement noise in the measurement noise matrix $\bm{R}$ to account for equal consecutive measurements.
 \end{description}
 \subsection{Mapping to the track reference frame}
 The estimator discussed above returns a state estimate in the inertial frame which then needs to be transformed into the track reference frame. The coordinates in the track reference frame are the curvilinear abscissa $s$, the lateral position error $e_Y$, and the heading error $e_\psi$. The procedure for this transformation is described below.\\
@@ -408,9 +408,8 @@ Below all steps are described that are performed during one time step (asynchron
     \label{fig:controlStructure}
 \end{figure}
 
-\section{Experiments}
-%{\bfseries{Made a new Chapter for experimental results}} 
-The experiments were performed in a closed space at UC Berkeley. The available area had a size of about 5 by 8 meters and provided enough space for a simple race track.\\
+\section{Experimental results}
+The experiments were performed in a closed space at UC Berkeley. The available area had a size of approx. 5 by 8 meters and provided enough space for a simple race track.\\
 We chose a race track that fits the available area while still providing curves in different directions with the maximum possible curvature of $\SI{1.24}{\per\meter}$. The curvature is shown in Fig. \ref{fig:exp_curv}. The track length is $\SI{19}{\meter}$.
 We used a constant sample size for the system identification of 120 points per lap which corresponds to $\SI{2.4}{\second}$ since the state estimation runs at $\SI{50}{\hertz}$. We also used an LMPC horizon length of $N=12$ which corresponds to a prediction time of $\SI{1.2}{\second}$. This horizon is a trade-off between fast learning and fast solver times.
 \begin{figure}[ht]
@@ -420,10 +419,10 @@ We used a constant sample size for the system identification of 120 points per l
     \label{fig:exp_curv}
 \end{figure}
 
-The first 3 laps were controlled by a a path following MPC with a kinematic bicycle model at $v_{Ref}=\SI{1.0}{\meter\per\second}$, this reference speed yields a path following lap time of about $t_{pf}=\SI{21}{\second}$. These 3 laps are required to create a safe set containing two full laps and to provide enough data for the system identification. The LMPC strategy starts in the 4\textsuperscript{th} lap.
+The first 3 laps were controlled by a a path following MPC with a kinematic bicycle model at $v_{Ref}=\SI{1.0}{\meter\per\second}$, this reference speed yields a path following lap time of approx. $t_{pf}=\SI{21}{\second}$. These 3 laps are required to create a safe set containing two full laps and to provide enough data for the system identification. The LMPC strategy starts in the 4\textsuperscript{th} lap.
 
 \paragraph{Results and discussion}
-We can see in Fig. \ref{fig:exp_lapTime} that the lap time decreases rapidly within the first few learning iterations before it converges to a trajectory that takes about $t=\SI{7.55}{\second} \pm \SI{0.25}{\second}$ at an average speed of $\SI{2.5}{\meter\per\second}$. The iteration cost does not continuously decrease but instead, it oscillates around a mean value. This is due to the model mismatch between the MPC formulation and the real car dynamics. The model mismatch arises from inaccurate measurements that are used for the system identification and from the polynomial approximation of the curvature. Robust LMPC and how to handle model mismatch is subject of current research.\\
+We can see in Fig. \ref{fig:exp_lapTime} that the lap time decreases rapidly within the first few learning iterations before it converges to a trajectory that takes approx. $t=\SI{7.55}{\second} \pm \SI{0.25}{\second}$ at an average speed of $\SI{2.5}{\meter\per\second}$. The iteration cost does not continuously decrease but instead, it oscillates around a mean value. This is due to the model mismatch between the MPC formulation and the real car dynamics. The model mismatch arises from inaccurate measurements that are used for the system identification and from the polynomial approximation of the curvature. Robust LMPC and how to handle model mismatch is subject of current research.\\
 Figures \ref{fig:exp_v} and \ref{fig:exp_e_Y} illustrate the converging behavior of velocities and lateral deviation. Even though especially lateral velocity measurements are very noisy, the combination of system identification and LMPC manages to converge to an optimal trajectory.
 Figure \ref{fig:exp_v_over_xy} visualizes the car's velocity at each point of the track during one optimal iteration.% {\bfseries{This figure is pretty cool, make sure to have in your presentation. Also, could you compare it with the optimal trajectory. We can discuss about how to compute this}} \\
 \\

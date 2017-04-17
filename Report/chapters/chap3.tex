@@ -181,10 +181,10 @@ where $\tilde{\bm{x}}_t^{j,k}$ is an $n$-th degree polynomial that approximates 
 \begin{equation}
 \tilde{\bm{x}}_t^{j,k}=\left\{\bm{x}\in\mathbb{R}^5:\forall i\in\{v_x,v_y,\dot\psi,e_\psi,e_y\},i=\begin{pmatrix}s^n &s^{n-1}&...&s& 1\end{pmatrix}\bm{\Gamma}_{t,i}^{j,k}\right\},
 \end{equation}
-where $\bm{\Gamma}_{t,i}^{j,k}$ is a vector containing the coefficients of the polynomial.\\
+where $\bm{\Gamma}_{t,i}^{j,k}$ is a vector containing the coefficients of the polynomial at time $t$.\\
 We also define the time varying function $C_t^{j,k}(\cdot)$ to approximate the cost-to-go function $J_{t\rightarrow\infty}^k(\cdot)$:
 \begin{equation}
-C_t^{j,j-1}(\bm{x})=\begin{cases}
+C_t^{j,k}(\bm{x})=\begin{cases}
 \begin{pmatrix}
 s^n & s^{n-1} &...&s&1
 \end{pmatrix}
@@ -196,8 +196,8 @@ where $\bm{\Delta}_t^{j,k}$ contains the coefficients of the polynomial approxim
 We define the continuous time varying approximation of $Q^{j-1}(\cdot)$:
 \begin{equation}
 \tilde Q_t^{j,j-1}(\bm{x},\lambda)=\begin{cases}
-\lambda C_t^{j,j-1}(\bm{x})+(1-\lambda)C_t^{j,j-2}(\bm{x}),&\text{if }(\bm{x},\lambda)\in\tilde{\mathcal{SS}}_t^{j,j-1}\\
-+\infty,&\text{if }(\bm{x},\lambda)\not\in\tilde{\mathcal{SS}}_t^{j,j-1}
+\lambda C_t^{j,j-1}(\bm{x})+(1-\lambda)C_t^{j,j-2}(\bm{x}),&\text{if }(\bm{x},\lambda)\in\tilde{\mathcal{SS}}_t^{j,j-1},\\
++\infty,&\text{if }(\bm{x},\lambda)\not\in\tilde{\mathcal{SS}}_t^{j,j-1}.
 \end{cases}
 \end{equation}
 Having defined the relaxation of the safe set and approximation of the terminal cost function we can rewrite the LMPC formulation from Eq. \eqref{eq:generalLMPC}:
@@ -211,7 +211,7 @@ Having defined the relaxation of the safe set and approximation of the terminal 
 (\bm{x}_{t+N|t},\lambda)&\in\tilde{\mathcal{SS}}^{j,j-1}.
 \end{align}\label{eq:relaxedLMPC}
 \end{subequations}
-In practice, the polynomial degree as well as the number of points that are used for the approximation are design parameters. The polynomial degree has to be chosen large enough to approximate the trajectory in the chosen area well enough. However, a high degree polynomial function can lead to numerical difficulties for the solver due to large derivative values and multiple local minima. Similarly, the number of points has to be chosen in such a way that the predicted terminal state $\bm{x}_N$ lies inside the approximated area. This is why this method works especially well if the approximated region is not too large (i.e. if the horizon $N$ is not too long) and if the trajectories can be well approximated by polynomials of the chosen degree.\\
+In practice, the polynomial degree $n$ as well as the number of points that are used for the approximation are design parameters. The polynomial degree has to be chosen large enough to approximate the trajectory in the chosen area well enough. However, a high degree polynomial function can lead to numerical difficulties for the solver due to large derivative values and multiple local minima. Similarly, the number of points has to be chosen in such a way that the predicted terminal state $\bm{x}_N$ lies inside the approximated area. This is why this method works especially well if the approximated region is not too large (i.e. if the horizon $N$ is not too long) and if the trajectories can be well approximated by polynomials of the chosen degree.\\
 For simulations and experiments in this thesis, a polynomial degree of $n=4...6$ proved to work well.\\
 In the case of no model mismatch it would be sufficient to use only the previous iteration in the safe set.
 However, since we expect some model mismatch in experiments, we always select the previous iteration as well as a second iteration with lowest iteration cost for the relaxation of the safe set and the approximation and the Q function.\\
@@ -231,21 +231,17 @@ In general, this approach could be extended to using more than two trajectories 
 
 \section{Simulations}
 The LMPC strategy is applied on the kinematic and the dynamic model in the track frame. The results are then mapped to the inertial $x-y$ frame to visualize the trajectory.\\
-The physical parameters of the model are taken from a 1:10 scale RC car that is also used for real experiments.
+The physical parameters of the model are taken from a 1:10 scale RC car that is also used for real experiments. They are listed in Tab. \ref{tab:BARCPar}.
 
 \begin{table}
 \centering
-\caption{Simulation parameters}
+\caption{Simulation parameters}\label{tab:BARCPar}
 \begin{tabular}{l|l}
 Parameter & Value\\
 \hline
 Mass& $m=\SI{2.0}{\kilo\gram}$\\
 Axle distances&$L_F=L_R = \SI{0.125}{\meter}$\\
-Moment of inertia&$I_z = \SI{0.03}{\kilo\gram\square\meter}$\\
-Road friction&$\mu = 0.8$\\
-Stiffness factor & $B=10$\\ 
-Shape factor & $C=1.9$\\
-Peak factor & $D=1.0$
+Moment of inertia&$I_z = \SI{0.03}{\kilo\gram\square\meter}$
 \end{tabular}
 \end{table}
 %\emph{Note:} In the MPC formulation the Pacejka function is approximated by a linear function that is constrained to maximum tire forces. This linearization simplifies the optimization problem while still modeling the tire forces depending on the tire slip angles. % not valid anymore
@@ -260,11 +256,12 @@ The curvature $c(s)$ is given and constructed in such a way that the track is cl
 \\
 \paragraph{Lane constraints} Lane constraints are implemented as soft constraints in the cost function \cite[p.~114]{Borrelli2003}:
 \begin{equation}\label{eq:softLaneConstraints}
-J_{Lane} = \sum_{i=1}^N [c_1\epsilon_i^2 + c_2\epsilon_i], \epsilon_i = |e_{Y,i}|-\frac{w_{Lane}}{2}
+J_{Lane} = \sum_{i=1}^N [c_1\epsilon_i^2 + c_2\epsilon_i], \text{ with }\epsilon_i = |e_{Y,i}|-\frac{w_{Lane}}{2}
 \end{equation}
 with lane width $w_{Lane}=\SI{0.8}{\meter}$. This is done so that the solver is able to solve the LMPC problem even if model mismatch leads to the car leaving the track boundaries. At the same time it facilitates the solving process even when the trajectory is within the track boundaries and thus allows real time feasibility. %{\bfseries{The main reason why we want to use the formulation is for real-time issues, unfortunately solving a nonlinear problem with hard constraint on the state is very challenging...Probably, it would be necessary to have a soft constraint (or tighten them) also for the model mismatch but it is not the primary reason}}
-%\paragraph{Soft terminal constraints}
-%The terminal constraint \eqref{eq:generalLMPC5} s implemented as soft constraint:
+\paragraph{Soft terminal constraint}
+The terminal state constraint \eqref{eq:generalLMPC5} is implemented as soft constraint. This has two main advantages: First, soft constraints can be handled easier and faster by numerical solvers.
+Second, the soft constraint can be tuned in order to allow small constraint violations. This leads to more freedom in finding better trajectories. On the other hand, violating the constraint can also lead to non-feasible trajectories.  
 %\begin{equation}
 %J = \sum_{i=1}^5 c_i\cdot (x_i^j-x_{\mathcal{SS},i})^2
 %\end{equation}
@@ -311,79 +308,71 @@ Figure \ref{fig:SimKin_v} shows the velocity during three selected laps. The car
 %\end{itemize}
 \begin{figure}[ht]
 	\centering
+  	\input{../../Figures/Simulation/Kin_cost.pgf}
+  	\caption{Iteration Cost, Kinematic Model}
+	\label{fig:SimKin_cost}
+\end{figure}
+\begin{figure}[ht]
+	\centering
   	\input{../../Figures/Simulation/Kin_xy.pgf}
-	\caption{Simulation kinematic model} %{\bfseries{REMIND ME TO DISCUSS ABOUT THIS, HOW IS THE STAGE COST DEFINED ARE YOU DOING THE APPROXIMATION WHEN IS ALWAYS 1? THAT MAY BE THE ISSUE}}}
+	\caption{Top view, Kinematic Model}
 	\label{fig:SimKin_xy}
 \end{figure}
-
 \begin{figure}[ht]
 	\centering
   	\input{../../Figures/Simulation/Kin_eY.pgf}
-  	\caption{Lateral error $e_Y$}
+  	\caption{Lateral error $e_Y$, Kinematic Model}
 	\label{fig:SimKin_eY}
 \end{figure}
-
 \begin{figure}[ht]
 	\centering
   	\input{../../Figures/Simulation/Kin_v.pgf}
-  	\caption{Velocity $v$}
+  	\caption{Velocity $v$, Kinematic Model}
 	\label{fig:SimKin_v}
 \end{figure}
 
-\begin{figure}[ht]
-	\centering
-  	\input{../../Figures/Simulation/Kin_cost.pgf}
-  	\caption{Cost}
-	\label{fig:SimKin_cost}
-\end{figure}
 \subsection{Simulation using the dynamic model}
-Similar to the kinematic model, simulations using the dynamic bicycle model from Eq. \eqref{eq:dynModel} were performed. The sampling time was $dt=\SI{0.02}{\second}$. In order to avoid unrealistic velocities and numerical issues, the acceleration input was constrained to $-\SI{1.8}{\meter\per\square\second}\leq a \leq \SI{1.8}{\meter\per\square\second}$. We used the physical parameters of the BARC and a Pacejka model with coefficients $B=5.0, C=2.0, D = 1.0$. Figures \ref{fig:SimDyn_xy} to \ref{fig:SimDyn_v_over_xy} show the simulation results.\\
-\paragraph{Evaluation of the results}The first two laps are controlled by a path following controller at a reference speed of $\SI{2.0}{\meter\per\second}$. After that, the LMPC strategy is able to reduce the lap time to $\SI{14}{\second}$ at an average speed of $\SI{3.6}{\meter\per\second}$.
+Similar to the kinematic model, simulations using the dynamic bicycle model from Eq. \eqref{eq:dynModel} were performed. The sampling time was $dt=\SI{0.04}{\second}$. In order to avoid unrealistic velocities and numerical issues, the acceleration input was constrained to $-\SI{1.8}{\meter\per\square\second}\leq a \leq \SI{1.8}{\meter\per\square\second}$. We used the physical parameters of the BARC and a Pacejka model with coefficients $B=2.0, C=2.0, D = 0.5$. Figures \ref{fig:SimDyn_xy} to \ref{fig:SimDyn_v_over_xy} show the simulation results.\\
+\paragraph{Evaluation of the results}The first two laps are controlled by a path following controller at a reference speed of $\SI{1.5}{\meter\per\second}$. After that, the LMPC strategy is able to reduce the lap time to $\SI{20.5}{\second}$ at an average speed of $\SI{2.4}{\meter\per\second}$.
 
-As opposed to the kinematic model, the velocity changes through one iteration as it needs to slow down in sharp curves and accelerate in straight sections. This variation of velocities can be seen in Fig. \ref{fig:SimDyn_v_over_xy}. Fig. \ref{fig:SimDyn_v} compares longitudinal and lateral velocities of multiple laps during the learning process. While the velocities increase quickly over the first 20 iterations, they eventually converge to a steady state trajectory in lap 40.
+Figure \ref{fig:SimDyn_cost} presents the iteration cost as a function of the iteration number. A constant lap time is reached after approximately 10 iterations. The learning rate (i.e. the convergence speed) depends mainly on the horizon length $N$. In this simulation we chose a horizon length of $N=25$ which corresponds to a prediction time of $\SI{1.0}{\second}$. Additionally, the learning rate is strongly influenced by the soft terminal state constraint. Tightening this soft constraint not only increases computation time but also slows down the learning rate.
 
-Figure \ref{fig:SimDyn_cost} presents the iteration cost as a function of the iteration number. A constant lap time is reached after approximately 30 iterations.
+As opposed to the kinematic model, the velocity changes through one iteration as it needs to slow down in sharp curves and accelerate in straight sections. This variation of velocities can be seen in Fig. \ref{fig:SimDyn_v_over_xy}. Fig. \ref{fig:SimDyn_v} compares longitudinal and lateral velocities of multiple laps during the learning process. While the velocities increase quickly over the first 5 iterations, they eventually converge to a steady state trajectory.
 
-Figure \ref{fig:SimDyn_fcircle} illustrates a plot of longitudinal and lateral acceleration which is also known as the \emph{friction circle}. It can be seen that the maximum lateral accelerations are about symmetric with maximal values of $\SI{1.3}{\meter\per\square\second}$. Longitudinal accelerations are smaller, because we constrained acceleration and used derivative cost on the acceleration input in order to simulate low tire forces in longitudinal direction.
+Figure \ref{fig:SimDyn_fcircle} illustrates a plot of longitudinal and lateral acceleration which is also known as the \emph{friction circle}. It can be seen that the maximum lateral accelerations display maximal values of $\SI{1.4}{\meter\per\square\second}$. Longitudinal accelerations are smaller, because we constrained and used derivative cost on the acceleration input in order to simulate low tire forces in longitudinal direction.
 % Plot inputs?
-\begin{figure}[ht]
-	\centering
-  	\input{../../Figures/Simulation/Dyn_xy.pgf}
-	\caption{2D view}
-	\label{fig:SimDyn_xy}
-\end{figure}
-
-%\begin{figure}[ht]
-%	\centering
-%  	\input{../../Figures/Simulation/Dyn_eY.pgf}
-%	\caption{Lateral position error}
-%	\label{fig:SimDyn_eY}
-%\end{figure}
-
-\begin{figure}[ht]
-	\centering
-  	\input{../../Figures/Simulation/Dyn_v.pgf}
-	\caption{Velocities}
-	\label{fig:SimDyn_v}
-\end{figure}
-
-\begin{figure}[ht]
-	\centering
-  	\input{../../Figures/Simulation/Dyn_fcircle.pgf}
-	\caption{Friction circle}
-	\label{fig:SimDyn_fcircle}
-\end{figure}
 
 \begin{figure}[ht]
 	\centering
   	\input{../../Figures/Simulation/Dyn_cost.pgf}
-	\caption{Iteration cost Dynamic Bicycle Model}
+	\caption{Iteration Cost, Dynamic Model}
 	\label{fig:SimDyn_cost}
 \end{figure}
 
 \begin{figure}[ht]
 	\centering
+  	\input{../../Figures/Simulation/Dyn_xy.pgf}
+	\caption{Top view, Dynamic Model}
+	\label{fig:SimDyn_xy}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+  	\input{../../Figures/Simulation/Dyn_v.pgf}
+	\caption{Velocities, Dynamic Model}
+	\label{fig:SimDyn_v}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
   	\input{../../Figures/Simulation/Dyn_v_over_xy.pgf}
-	\caption{Velocity over x and y}
+	\caption{Velocity over x and y, Dynamic Model}
 	\label{fig:SimDyn_v_over_xy}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+  	\input{../../Figures/Simulation/Dyn_fcircle.pgf}
+	\caption{Friction circle, Dynamic Model}
+	\label{fig:SimDyn_fcircle}
 \end{figure}

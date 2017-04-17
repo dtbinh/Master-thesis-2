@@ -738,7 +738,7 @@
 \pgftext[x=0.573402in,y=2.805251in,right,]{\rmfamily\fontsize{6.940000}{8.328000}\selectfont \(\displaystyle 1.0\)}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=0.273440in,y=1.638586in,,bottom,rotate=90.000000]{\rmfamily\fontsize{8.330000}{9.996000}\selectfont \(\displaystyle c\) [\(\SI{}{\per\meter}\)]}%
+\pgftext[x=0.273440in,y=1.638586in,,bottom,rotate=90.000000]{\rmfamily\fontsize{8.330000}{9.996000}\selectfont \(\displaystyle c(s)\) [\(\SI{}{\per\meter}\)]}%
 \end{pgfscope}%
 \end{pgfpicture}%
 \makeatother%
